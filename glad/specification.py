@@ -6,6 +6,7 @@ class EGL(Specification):
 
     API = 'https://raw.githubusercontent.com/KhronosGroup/EGL-Registry/main/api/'
     NAME = 'egl'
+    EXTS = ['https://raw.githubusercontent.com/google/angle/main/scripts/egl_angle_ext.xml']
 
     def protections(self, symbol, api=None, profile=None, feature_set=None):
         return list()
@@ -16,6 +17,8 @@ class GL(Specification):
 
     API = 'https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/xml/'
     NAME = 'gl'
+    EXTS = ['https://www.uplinklabs.net/glsl_exts.xml',
+            'https://raw.githubusercontent.com/google/angle/main/scripts/gl_angle_ext.xml']
 
     def _magic_require(self, api, profile):
         require = Specification._magic_require(self, api, profile)
@@ -35,6 +38,7 @@ class GLX(Specification):
 
     API = 'https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/xml/'
     NAME = 'glx'
+    EXTS = []
 
     def protections(self, symbol, api=None, profile=None, feature_set=None):
         return list()
@@ -45,6 +49,7 @@ class WGL(Specification):
 
     API = 'https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/xml/'
     NAME = 'wgl'
+    EXTS = []
 
     def protections(self, symbol, api=None, profile=None, feature_set=None):
         return list()
@@ -55,6 +60,7 @@ class VK(Specification):
 
     API = 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/'
     NAME = 'vk'
+    EXTS = []
 
     def _magic_require(self, api, profile):
         # magic_categories = (

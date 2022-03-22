@@ -202,6 +202,19 @@ class TypeEnumCommand(namedtuple('_TypeEnumCommand', ['types', 'enums', 'command
     def __contains__(self, item):
         return item in self.types or item in self.enums or item in self.commands
 
+def append_exts(root, ext_root):
+    insertion_point = root.findall("./commands")[0]
+    for command in ext_root.iter('commands'):
+        insertion_point.extend(command)
+    insertion_point = root.findall("./types")[0]
+    for typedef in ext_root.iter('types'):
+        insertion_point.extend(typedef)
+    insertion_point = root.findall("./extensions")[0]
+    for extension in ext_root.iter('extensions'):
+        insertion_point.extend(extension)
+    insertion_point = root
+    for enums in ext_root.iter('enums'):
+        insertion_point.append(enums)
 
 class Specification(object):
     API = 'https://cvs.khronos.org/svn/repos/ogl/trunk/doc/registry/public/api/'
@@ -255,18 +268,26 @@ class Specification(object):
         return self.NAME
 
     @classmethod
-    def from_url(cls, url, opener=None):
+    def from_url(cls, url, opener=None, extensions=[]):
         if opener is None:
             opener = URLOpener.default()
 
         with closing(opener.urlopen(url)) as f:
             raw = f.read()
 
-        return cls(xml_fromstring(raw))
+        root = xml_fromstring(raw)
+
+        for exturl in extensions:
+            with closing(opener.urlopen(exturl)) as f:
+                raw = f.read()
+
+            append_exts(root, xml_fromstring(raw))
+
+        return cls(root)
 
     @classmethod
     def from_remote(cls, opener=None):
-        return cls.from_url(cls.API + cls.NAME + '.xml', opener=opener)
+        return cls.from_url(cls.API + cls.NAME + '.xml', opener=opener, extensions=cls.EXTS)
 
     @classmethod
     def from_string(cls, string):
