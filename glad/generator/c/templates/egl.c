@@ -52,19 +52,6 @@ static int glad_egl_find_core_{{ api|lower }}(EGLDisplay display) {
     if (display == NULL) {
         display = EGL_NO_DISPLAY; /* this is usually NULL, better safe than sorry */
     }
-    if (display == EGL_NO_DISPLAY) {
-        display = eglGetCurrentDisplay();
-    }
-#ifdef EGL_VERSION_1_4
-    if (display == EGL_NO_DISPLAY) {
-        display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    }
-#endif
-#ifndef EGL_VERSION_1_5
-    if (display == EGL_NO_DISPLAY) {
-        return 0;
-    }
-#endif
 
     version = eglQueryString(display, EGL_VERSION);
     (void) eglGetError();
