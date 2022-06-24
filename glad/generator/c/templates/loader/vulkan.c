@@ -116,6 +116,38 @@ int gladLoaderLoadVulkan{{ 'Context' if options.mx }}({{ template_utils.context_
 }
 {% endif %}
 
+void gladLoaderResetVulkan{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+{% if options.mx %}
+    memset(context, 0, sizeof(GladVulkanContext));
+{% else %}
+{% if not options.on_demand %}
+{% for feature in feature_set.features %}
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = 0;
+{% endfor %}
+
+{% for extension in feature_set.extensions %}
+{% call template_utils.protect(extension) %}
+    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = 0;
+{% endcall %}
+{% endfor %}
+{% endif %}
+
+{% for extension, commands in loadable() %}
+{% for command in commands %}
+{% call template_utils.protect(command) %}
+    {{ command.name|ctx }} = NULL;
+{% endcall %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+}
+
+{% if options.mx_global %}
+void gladLoaderResetVulkan(void) {
+    gladLoaderResetVulkanContext(gladGetVulkanContext());
+}
+{% endif %}
+
 {% if options.on_demand %}
 {% call template_utils.zero_initialized() %}static struct _glad_vulkan_userptr glad_vulkan_internal_loader_global_userptr{% endcall %}
 
@@ -150,6 +182,18 @@ void gladLoaderUnloadVulkan{{ 'Context' if options.mx }}({{ template_utils.conte
         glad_vulkan_internal_loader_global_userptr.vk_handle = NULL;
 {% endif %}
     }
+
+{% if not options.mx %}
+    gladLoaderResetVulkan();
+{% else %}
+    gladLoaderResetVulkanContext(context);
+{% endif %}
 }
+
+{% if options.mx_global %}
+void gladLoaderUnloadVulkan(void) {
+    gladLoaderUnloadVulkanContext(gladGetVulkanContext());
+}
+{% endif %}
 
 #endif /* GLAD_VULKAN */

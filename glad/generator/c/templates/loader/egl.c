@@ -89,6 +89,26 @@ void gladLoaderUnloadEGL(void) {
         glad_egl_internal_loader_global_userptr.handle = NULL;
 {% endif %}
     }
+
+    gladLoaderResetEGL();
+}
+
+void gladLoaderResetEGL() {
+{% if not options.on_demand %}
+{% for feature in feature_set.features %}
+    GLAD_{{ feature.name }} = 0;
+{% endfor %}
+
+{% for extension in feature_set.extensions %}
+    GLAD_{{ extension.name }} = 0;
+{% endfor %}
+{% endif %}
+
+{% for extension, commands in loadable() %}
+{% for command in commands %}
+    {{ command.name|ctx }} = NULL;
+{% endfor %}
+{% endfor %}
 }
 
 #endif /* GLAD_EGL */
