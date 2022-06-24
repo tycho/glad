@@ -34,7 +34,9 @@
 {% block header %}
 {% endblock %}
 
-#define GLAD_{{ feature_set.name|upper }}
+{% for api in feature_set.info.apis %}
+#define GLAD_{{ api|upper }}
+{% endfor %}
 {% for option in options %}
 {% if options[option] %}
 #define GLAD_OPTION_{{ feature_set.name|upper }}_{{ option|upper }}
