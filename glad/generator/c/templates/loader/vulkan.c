@@ -64,10 +64,11 @@ static void* {{ loader_handle }} = NULL;
 static void* glad_vulkan_dlopen_handle({{ template_utils.context_arg(def='void') }}) {
     static const char *NAMES[] = {
 #if GLAD_PLATFORM_APPLE
+        "libvulkan.dylib",
         "libvulkan.1.dylib",
+        "libMoltenVK.dylib",
 #elif GLAD_PLATFORM_WIN32
         "vulkan-1.dll",
-        "vulkan.dll",
 #else
         "libvulkan.so.1",
         "libvulkan.so",
