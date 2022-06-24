@@ -95,6 +95,34 @@ int gladLoaderLoadGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(
 }
 {% endif %}
 
+void gladLoaderResetGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+{% if options.mx %}
+    memset(context, 0, sizeof(GladGLContext));
+{% else %}
+{% if not options.on_demand %}
+{% for feature in feature_set.features %}
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = 0;
+{% endfor %}
+
+{% for extension in feature_set.extensions %}
+    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = 0;
+{% endfor %}
+{% endif %}
+
+{% for extension, commands in loadable() %}
+{% for command in commands %}
+    {{ command.name|ctx }} = NULL;
+{% endfor %}
+{% endfor %}
+{% endif %}
+}
+
+{% if options.mx_global %}
+void gladLoaderResetGL(void) {
+    gladLoaderResetGLContext(gladGetGLContext());
+}
+{% endif %}
+
 {% if options.on_demand %}
 {% call template_utils.zero_initialized() %}static struct _glad_gl_userptr glad_gl_internal_loader_global_userptr{% endcall %}
 static GLADapiproc glad_gl_internal_loader_get_proc(const char *name) {
@@ -120,6 +148,18 @@ void gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ template_utils.context_a
         glad_gl_internal_loader_global_userptr.handle = NULL;
 {% endif %}
     }
+
+{% if not options.mx %}
+    gladLoaderResetGL();
+{% else %}
+    gladLoaderResetGLContext(context);
+{% endif %}
 }
+
+{%if options.mx_global %}
+void gladLoaderUnloadGL(void) {
+    gladLoaderUnloadGLContext(gladGet{{ feature_set.name|api }}Context());
+}
+{% endif %}
 
 #endif /* GLAD_GL */

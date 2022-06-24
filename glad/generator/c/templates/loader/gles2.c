@@ -116,6 +116,34 @@ int gladLoaderLoadGLES2{{ 'Context' if options.mx }}({{ template_utils.context_a
 }
 {% endif %}
 
+void gladLoaderResetGLES2{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+{% if options.mx %}
+    memset(context, 0, sizeof(Glad{{ feature_set.name|api }}Context));
+{% else %}
+{% if not options.on_demand %}
+{% for feature in feature_set.features %}
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = 0;
+{% endfor %}
+
+{% for extension in feature_set.extensions %}
+    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = 0;
+{% endfor %}
+{% endif %}
+
+{% for extension, commands in loadable() %}
+{% for command in commands %}
+    {{ command.name|ctx }} = NULL;
+{% endfor %}
+{% endfor %}
+{% endif %}
+}
+
+{% if options.mx_global %}
+void gladLoaderResetGLES2(void) {
+    gladLoaderResetGLES2Context(gladGet{{ feature_set.name|api }}Context());
+}
+{% endif %}
+
 {% if options.on_demand %}
 {% call template_utils.zero_initialized() %}static struct _glad_gles2_userptr glad_gles2_internal_loader_global_userptr{% endcall %}
 static GLADapiproc glad_gles2_internal_loader_get_proc(const char *name) {
@@ -141,6 +169,18 @@ void gladLoaderUnloadGLES2{{ 'Context' if options.mx }}({{ template_utils.contex
         glad_gles2_internal_loader_global_userptr.get_proc_address_ptr = NULL;
 {% endif %}
     }
+
+{% if not options.mx %}
+    gladLoaderResetGLES2();
+{% else %}
+    gladLoaderResetGLES2Context(context);
+{% endif %}
 }
+
+{%if options.mx_global %}
+void gladLoaderUnloadGLES2(void) {
+    gladLoaderUnloadGLES2Context(gladGet{{ feature_set.name|api }}Context());
+}
+{% endif %}
 
 #endif /* GLAD_GLES2 */
