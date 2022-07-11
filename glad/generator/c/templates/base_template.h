@@ -66,7 +66,11 @@ extern "C" {
 {% block commands %}
 {{ template_utils.write_function_typedefs(feature_set.commands) }}
 {% if not options.mx %}
+#ifdef __INTELLISENSE__
+{{ template_utils.write_function_definitions(feature_set.commands) }}
+#else
 {{ template_utils.write_function_declarations(feature_set.commands, debug=options.debug) }}
+#endif
 {% else %}
 typedef struct Glad{{ feature_set.name|api }}Context {
     void* userptr;
@@ -93,9 +97,13 @@ GLAD_API_CALL Glad{{ feature_set.name|api }}Context* glad_{{ feature_set.name }}
 #define GLAD_{{ extension.name }} (glad_{{ feature_set.name }}_context->{{ extension.name|no_prefix }})
 {% endfor %}
 
+#ifdef __INTELLISENSE__
+{{ template_utils.write_function_definitions(feature_set.commands) }}
+#else
 {% for command in feature_set.commands %}
 #define {{ command.name }} (glad_{{ feature_set.name }}_context->{{ command.name|no_prefix }})
 {% endfor %}
+#endif
 {% endif %}
 
 {% endif %}
