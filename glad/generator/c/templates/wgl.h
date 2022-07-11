@@ -10,7 +10,11 @@
 {{ template_utils.write_function_typedefs(feature_set.commands) }}
 {# these are already defined in windows.h #}
 {% set blacklist = feature_set.features[0].get_requirements(spec, feature_set=feature_set).commands %}
+#ifdef __INTELLISENSE__
+{{ template_utils.write_function_definitions(feature_set.commands|reject('existsin', blacklist)) }}
+#else
 {{ template_utils.write_function_declarations(feature_set.commands|reject('existsin', blacklist)) }}
+#endif
 {% endblock %}
 
 
