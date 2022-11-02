@@ -1,8 +1,8 @@
 {% extends 'base_template.c' %}
 
 {% block loader %}
-static int glad_egl_get_extensions(EGLDisplay display, const char **extensions) {
-    *extensions = eglQueryString(display, EGL_EXTENSIONS);
+static int glad_egl_get_extensions({{ template_utils.context_arg(', ') }}EGLDisplay display, const char **extensions) {
+    *extensions = {{ 'eglQueryString'|ctx }}(display, EGL_EXTENSIONS);
 
     return extensions != NULL;
 }
@@ -32,12 +32,12 @@ static GLADapiproc glad_egl_get_proc_from_userptr(void *userptr, const char *nam
 }
 
 {% for api in feature_set.info.apis %}
-static int glad_egl_find_extensions_{{ api|lower }}(EGLDisplay display) {
+static int glad_egl_find_extensions_{{ api|lower }}({{ template_utils.context_arg(', ') }}EGLDisplay display) {
     const char *extensions;
-    if (!glad_egl_get_extensions(display, &extensions)) return 0;
+    if (!glad_egl_get_extensions({{'context, ' if options.mx }}display, &extensions)) return 0;
 
 {% for extension in feature_set.extensions %}
-    GLAD_{{ extension.name }} = glad_egl_has_extension(extensions, "{{ extension.name }}");
+    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = glad_egl_has_extension(extensions, "{{ extension.name }}");
 {% else %}
     GLAD_UNUSED(glad_egl_has_extension);
 {% endfor %}
@@ -45,7 +45,7 @@ static int glad_egl_find_extensions_{{ api|lower }}(EGLDisplay display) {
     return 1;
 }
 
-static int glad_egl_find_core_{{ api|lower }}(EGLDisplay display) {
+static int glad_egl_find_core_{{ api|lower }}({{ template_utils.context_arg(', ') }}EGLDisplay display) {
     int major, minor;
     const char *version;
 
@@ -53,8 +53,8 @@ static int glad_egl_find_core_{{ api|lower }}(EGLDisplay display) {
         display = EGL_NO_DISPLAY; /* this is usually NULL, better safe than sorry */
     }
 
-    version = eglQueryString(display, EGL_VERSION);
-    (void) eglGetError();
+    version = {{ 'eglQueryString'|ctx }}(display, EGL_VERSION);
+    (void) {{ 'eglGetError'|ctx }}();
 
     if (version == NULL) {
         major = 1;
@@ -64,41 +64,67 @@ static int glad_egl_find_core_{{ api|lower }}(EGLDisplay display) {
     }
 
 {% for feature in feature_set.features %}
-    GLAD_{{ feature.name }} = (major == {{ feature.version.major }} && minor >= {{ feature.version.minor }}) || major > {{ feature.version.major }};
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = (major == {{ feature.version.major }} && minor >= {{ feature.version.minor }}) || major > {{ feature.version.major }};
 {% endfor %}
 
     return GLAD_MAKE_VERSION(major, minor);
 }
 
-int gladLoad{{ api|api }}UserPtr(EGLDisplay display, GLADuserptrloadfunc load, void* userptr) {
+int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}EGLDisplay display, GLADuserptrloadfunc load, void *userptr) {
     int version;
-    eglGetDisplay = (PFNEGLGETDISPLAYPROC) load(userptr, "eglGetDisplay");
-    eglGetCurrentDisplay = (PFNEGLGETCURRENTDISPLAYPROC) load(userptr, "eglGetCurrentDisplay");
-    eglQueryString = (PFNEGLQUERYSTRINGPROC) load(userptr, "eglQueryString");
-    eglGetError = (PFNEGLGETERRORPROC) load(userptr, "eglGetError");
-    if (eglGetDisplay == NULL || eglGetCurrentDisplay == NULL || eglQueryString == NULL || eglGetError == NULL) return 0;
+    {{ 'eglGetDisplay'|ctx }} = (PFNEGLGETDISPLAYPROC) load(userptr, "eglGetDisplay");
+    {{ 'eglGetCurrentDisplay'|ctx }} = (PFNEGLGETCURRENTDISPLAYPROC) load(userptr, "eglGetCurrentDisplay");
+    {{ 'eglQueryString'|ctx }} = (PFNEGLQUERYSTRINGPROC) load(userptr, "eglQueryString");
+    {{ 'eglGetError'|ctx }} = (PFNEGLGETERRORPROC) load(userptr, "eglGetError");
+    if ({{ 'eglGetDisplay'|ctx }} == NULL || {{ 'eglGetCurrentDisplay'|ctx }} == NULL || {{ 'eglQueryString'|ctx }} == NULL || {{ 'eglGetError'|ctx }} == NULL) return 0;
 
-    version = glad_egl_find_core_{{ api|lower }}(display);
+    version = glad_egl_find_core_{{ api|lower }}({{'context, ' if options.mx }}display);
     if (!version) return 0;
-{% for feature, _ in loadable(feature_set.features) %}
-    glad_egl_load_{{ feature.name }}(load, userptr);
+{% for feature, _ in loadable(feature_set.features, api=api) %}
+    glad_egl_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
 
-    if (!glad_egl_find_extensions_{{ api|lower }}(display)) return 0;
-{% for extension, _ in loadable(feature_set.extensions) %}
-    glad_egl_load_{{ extension.name }}(load, userptr);
+    if (!glad_egl_find_extensions_{{ api|lower }}({{'context, ' if options.mx }}display)) return 0;
+{% for extension, _ in loadable(feature_set.extensions, api=api) %}
+    glad_egl_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
+
+{% if options.mx_global %}
+    gladSet{{ feature_set.name|api }}Context(context);
+{% endif %}
 
 {% if options.alias %}
-    glad_egl_resolve_aliases();
+    glad_egl_resolve_aliases({{ 'context' if options.mx }});
 {% endif %}
 
     return version;
 }
 
-int gladLoad{{ api|api }}(EGLDisplay display, GLADloadfunc load) {
-    return gladLoad{{ api|api }}UserPtr(display, glad_egl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
+{% if options.mx_global %}
+int gladLoad{{ api|api }}UserPtr(EGLDisplay display, GLADuserptrloadfunc load, void *userptr) {
+    return gladLoad{{ api|api }}ContextUserPtr(gladGet{{ feature_set.name|api }}Context(), display, load, userptr);
 }
+{% endif %}
+
+int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}EGLDisplay display, GLADloadfunc load) {
+    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context,' if options.mx }} display, glad_egl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
+}
+
+{% if options.mx_global %}
+int gladLoad{{ api|api }}(EGLDisplay display, GLADloadfunc load) {
+    return gladLoad{{ api|api }}Context(gladGet{{ feature_set.name|api }}Context(), display, load);
+}
+{% endif %}
 {% endfor %}
+
+{% if options.mx_global %}
+Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context() {
+    return {{ global_context }};
+}
+
+void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Context *context) {
+    {{ global_context }} = context;
+}
+{% endif %}
 
 {% endblock %}

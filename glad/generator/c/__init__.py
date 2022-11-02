@@ -18,7 +18,7 @@ from glad.generator.util import (
     jinja2_contextfilter
 )
 from glad.parse import Type, EnumType
-from glad.specification import VK, GL, WGL
+from glad.specification import VK, EGL, GL, WGL
 import glad.util
 
 _ARRAY_RE = re.compile(r'\[[\d\w]*\]')
@@ -382,7 +382,7 @@ class CGenerator(JinjaGenerator):
         args = JinjaGenerator.get_template_arguments(self, spec, feature_set, config)
 
         # TODO allow MX for every specification/api
-        if spec.name not in (VK.NAME, GL.NAME):
+        if spec.name not in (EGL.NAME, VK.NAME, GL.NAME):
             args['options']['mx'] = False
             args['options']['mx_global'] = False
 
