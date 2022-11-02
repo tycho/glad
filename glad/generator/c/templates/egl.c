@@ -1,10 +1,32 @@
 {% extends 'base_template.c' %}
 
 {% block loader %}
-static int glad_egl_get_extensions({{ template_utils.context_arg(', ') }}EGLDisplay display, const char **extensions) {
-    *extensions = {{ 'eglQueryString'|ctx }}(display, EGL_EXTENSIONS);
+static int glad_egl_get_extensions({{ template_utils.context_arg(', ') }}EGLDisplay display, char **extensions) {
+    size_t clientLen, displayLen;
+    char *concat;
+    const char *clientExtensions = {{ 'eglQueryString'|ctx }}(EGL_NO_DISPLAY, EGL_EXTENSIONS);
+    const char *displayExtensions = (display == EGL_NO_DISPLAY) ? "" : {{ 'eglQueryString'|ctx }}(display, EGL_EXTENSIONS);
 
-    return extensions != NULL;
+    if (!clientExtensions) return 0;
+    if (!displayExtensions) return 0;
+
+    clientLen = strlen(clientExtensions);
+    displayLen = strlen(displayExtensions);
+
+    concat = (char *)malloc(clientLen + displayLen + 2);
+    if (!concat) return 0;
+
+    concat[0] = 0;
+    strcat(concat, clientExtensions);
+    if (displayLen) {
+        if (concat[clientLen - 1] != ' ')
+            strcat(concat, " ");
+        strcat(concat, displayExtensions);
+    }
+
+    *extensions = concat;
+
+    return 1;
 }
 
 static int glad_egl_has_extension(const char *extensions, const char *ext) {
@@ -33,7 +55,7 @@ static GLADapiproc glad_egl_get_proc_from_userptr(void *userptr, const char *nam
 
 {% for api in feature_set.info.apis %}
 static int glad_egl_find_extensions_{{ api|lower }}({{ template_utils.context_arg(', ') }}EGLDisplay display) {
-    const char *extensions;
+    char *extensions;
     if (!glad_egl_get_extensions({{'context, ' if options.mx }}display, &extensions)) return 0;
 
 {% for extension in feature_set.extensions %}
@@ -41,6 +63,8 @@ static int glad_egl_find_extensions_{{ api|lower }}({{ template_utils.context_ar
 {% else %}
     GLAD_UNUSED(glad_egl_has_extension);
 {% endfor %}
+
+    free(extensions);
 
     return 1;
 }
