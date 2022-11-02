@@ -31,6 +31,9 @@
 #ifndef GLAD_{{ feature_set.name|upper }}_H_
 #define GLAD_{{ feature_set.name|upper }}_H_
 
+{% block preheader %}
+{% endblock %}
+
 {% block header %}
 {% endblock %}
 
@@ -146,4 +149,6 @@ GLAD_API_CALL void gladUninstall{{ feature_set.name|api }}Debug(void);
 #ifdef __cplusplus
 }
 #endif
+{% block postheader %}
+{% endblock %}
 #endif

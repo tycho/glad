@@ -12,6 +12,9 @@
 {% endblock %}
 {% endif %}
 
+{% block preimpl %}
+{% endblock %}
+
 {% include 'impl_util.c' %}
 {% endblock %}
 
@@ -193,3 +196,5 @@ void gladUninstall{{ feature_set.name|api }}Debug(void) {
 #ifdef __cplusplus
 }
 #endif
+{% block postimpl %}
+{% endblock %}
