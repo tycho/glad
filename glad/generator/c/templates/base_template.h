@@ -120,7 +120,7 @@ GLAD_API_CALL void gladSet{{ api|api }}OnDemandLoader(GLADloadfunc loader);
 {% endif %}
 
 {% if options.mx_global %}
-Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context(void);
+GLAD_API_CALL Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context(void);
 GLAD_API_CALL void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Context *context);
 {% endif %}
 
