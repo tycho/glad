@@ -79,7 +79,7 @@ typedef struct Glad{{ feature_set.name|api }}Context {
     void* userptr;
 
 {% for extension in chain(feature_set.features, feature_set.extensions) %}
-    int {{ extension.name|ctx(member=True) }};
+    unsigned {{ extension.name|ctx(member=True) }} : 1;
 {% endfor %}
 
 {% for command in feature_set.commands %}
