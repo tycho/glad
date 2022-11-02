@@ -228,11 +228,13 @@ int gladLoad{{ api|api }}(VkPhysicalDevice physical_device, GLADloadfunc load) {
 
 {% if options.mx_global %}
 Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context() {
-    return {{ global_context }};
+    return &{{ global_context }};
 }
 
 void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Context *context) {
-    {{ global_context }} = context;
+    if (!context) return;
+    if (&{{ global_context }} == context) return;
+    {{ global_context }} = *context;
 }
 {% endif %}
 
