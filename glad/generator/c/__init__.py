@@ -6,7 +6,7 @@ import re
 from collections import namedtuple
 from contextlib import closing
 
-from glad.config import Config, ConfigOption, UnsupportedConstraint
+from glad.config import Config, ConfigOption, RequirementConstraint, UnsupportedConstraint
 from glad.sink import LoggingSink
 from glad.generator import JinjaGenerator
 from glad.generator.util import (
@@ -224,11 +224,11 @@ class CConfig(Config):
         default=False,
         description='Enables support for multiple GL contexts'
     )
-    # MX_GLOBAL = ConfigOption(
-    #    converter=bool,
-    #    default=False,
-    #    description='Mimic global GL functions with context switching'
-    # )
+    MX_GLOBAL = ConfigOption(
+        converter=bool,
+        default=False,
+        description='Mimic global GL functions with context switching'
+    )
     HEADER_ONLY = ConfigOption(
         converter=bool,
         default=False,
@@ -246,7 +246,7 @@ class CConfig(Config):
     )
 
     __constraints__ = [
-        # RequirementConstraint(['MX_GLOBAL'], 'MX'),
+        RequirementConstraint(['MX_GLOBAL'], 'MX'),
         UnsupportedConstraint(['MX'], 'DEBUG'),
         # RequirementConstraint(['MX', 'DEBUG'], 'MX_GLOBAL')
         UnsupportedConstraint(['MX'], 'ON_DEMAND')
