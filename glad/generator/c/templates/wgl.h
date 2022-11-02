@@ -1,5 +1,9 @@
 {% extends 'base_template.h' %}
 
+{% block preheader %}
+#ifdef _WIN32
+{% endblock %}
+
 {% block header %}
 #include <windows.h>
 #include <glad/gl.h>
@@ -23,4 +27,8 @@
 GLAD_API_CALL int gladLoad{{ api|api }}UserPtr(HDC hdc, GLADuserptrloadfunc load, void *userptr);
 GLAD_API_CALL int gladLoad{{ api|api }}(HDC hdc, GLADloadfunc load);
 {% endfor %}
+{% endblock %}
+
+{% block postheader %}
+#endif
 {% endblock %}

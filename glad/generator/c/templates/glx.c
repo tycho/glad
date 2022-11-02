@@ -1,5 +1,9 @@
 {% extends 'base_template.c' %}
 
+{% block preimpl %}
+#ifdef __linux__
+{% endblock %}
+
 {% block loader %}
 static int glad_glx_has_extension(Display *display, int screen, const char *ext) {
 #ifndef GLX_VERSION_1_1
@@ -100,4 +104,8 @@ int gladLoad{{ api|api }}(Display *display, int screen, GLADloadfunc load) {
 }
 {% endfor %}
 
+{% endblock %}
+
+{% block postimpl %}
+#endif
 {% endblock %}

@@ -1,5 +1,9 @@
 {% extends 'base_template.c' %}
 
+{% block preimpl %}
+#ifdef _WIN32
+{% endblock %}
+
 {% block extension_loaders %}
 {% for extension, commands in loadable((feature_set.features[1:], feature_set.extensions)) %}
 static void glad_wgl_load_{{ extension.name }}(GLADuserptrloadfunc load, void *userptr) {
@@ -95,4 +99,7 @@ int gladLoad{{ api|api }}(HDC hdc, GLADloadfunc load) {
     return gladLoad{{ api|api }}UserPtr(hdc, glad_wgl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
 {% endfor %}
+{% endblock %}
+{% block postimpl %}
+#endif
 {% endblock %}
