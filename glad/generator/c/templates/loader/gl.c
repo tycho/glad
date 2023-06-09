@@ -86,7 +86,7 @@ int gladLoaderLoadGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(
 
         version = gladLoadGL{{ 'Context' if options.mx }}UserPtr({{ 'context,' if options.mx }}glad_gl_get_proc, &userptr);
 
-        if (did_load) {
+        if (!version && did_load) {
             gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
         }
     }

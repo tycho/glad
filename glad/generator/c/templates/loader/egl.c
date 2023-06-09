@@ -61,7 +61,7 @@ int gladLoaderLoadEGL{{ 'Context' if options.mx }}({{ template_utils.context_arg
 
         version = gladLoadEGL{{ 'Context' if options.mx }}UserPtr({{ 'context, ' if options.mx }}display, glad_egl_get_proc, &userptr);
 
-        if (did_load) {
+        if (!version && did_load) {
             gladLoaderUnloadEGL{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
         }
     }
