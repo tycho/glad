@@ -47,7 +47,7 @@ function download_if_required {
         mkdir -p $(dirname "${1}")
         filename=$(basename "${1}")
         if [ ! -f ${filename} ]; then
-            wget -O ${filename} $2
+            wget --quiet -O ${filename} $2
         fi
         cp ${filename} $1
     fi
