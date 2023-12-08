@@ -213,6 +213,7 @@ int gladLoad{{ api|api }}(GLADloadfunc load) {
     return gladLoad{{ api|api }}Context(gladGet{{ feature_set.name|api }}Context(), load);
 }
 {% endif %}
+
 {% endfor %}
 
 {% if options.mx_global %}
