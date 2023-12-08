@@ -14,7 +14,6 @@
 
 {% block preimpl %}
 {% endblock %}
-
 {% include 'impl_util.c' %}
 {% endblock %}
 
@@ -23,16 +22,14 @@ extern "C" {
 #endif
 
 {% set global_context = 'glad_' + feature_set.name + '_context' -%}
-
 {% block variables %}
 {% if options.mx_global %}
 {% call template_utils.zero_initialized() %}Glad{{ feature_set.name|api }}Context {{ global_context }}{% endcall %}
 {% endif %}
 {% endblock %}
-
-
 {% block extensions %}
 {% if not options.mx and not options.on_demand %}
+
 {% for extension in chain(feature_set.features, feature_set.extensions) %}
 {% call template_utils.protect(extension) %}
 int GLAD_{{ extension.name }} = 0;
@@ -40,9 +37,9 @@ int GLAD_{{ extension.name }} = 0;
 {% endfor %}
 {% endif %}
 {% endblock %}
-
 {% block on_demand %}
 {% if options.on_demand %}
+
 {% for api in feature_set.info.apis %}
 {% if options.loader %}
 static GLADapiproc glad_{{ api }}_internal_loader_get_proc(const char *name);
@@ -68,9 +65,9 @@ static GLADapiproc glad_{{ spec.name }}_on_demand_loader(const char *name) {
 }
 {% endif %}
 {% endblock %}
-
 {% block debug %}
 {% if options.debug %}
+
 {% block debug_default_pre %}
 static void _pre_call_{{ feature_set.name }}_callback_default(const char *name, GLADapiproc apiproc, int len_args, ...) {
     GLAD_UNUSED(name);
@@ -97,8 +94,8 @@ void gladSet{{ feature_set.name|api }}PostCallback(GLADpostcallback cb) {
 }
 {% endif %}
 {% endblock %}
-
 {% if not options.mx %}
+
 {% block commands %}
 {% for command in feature_set.commands|c_commands %}
 {% call template_utils.protect(command) %}
@@ -129,9 +126,8 @@ static {{ command.proto.ret|type_to_c }} GLAD_API_PTR glad_debug_impl_{{ command
 {% endfor %}
 {% endblock %}
 {% endif %}
-
-
 {% if not options.on_demand %}
+
 {% block extension_loaders %}
 {% for extension, commands in loadable() %}
 {% call template_utils.protect(extension) %}
@@ -141,11 +137,10 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
     {{ command.name|ctx }} = ({{ command.name|pfn }}) load(userptr, "{{ command.name }}");
 {% endfor %}
 }
+
 {% endcall %}
 {% endfor %}
 {% endblock %}
-
-
 {% block aliasing %}
 {% if options.alias %}
 static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
