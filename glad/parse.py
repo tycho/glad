@@ -27,6 +27,7 @@ import warnings
 from collections import defaultdict, OrderedDict, namedtuple, deque
 from contextlib import closing
 from itertools import chain
+from xxhash import xxh3_64_hexdigest
 
 from glad.opener import URLOpener
 from glad.util import Version, topological_sort, memoize
@@ -82,6 +83,20 @@ class FeatureSet(object):
         self.types = types
         self.enums = enums
         self.commands = commands
+
+        # We use the index properties of these to figure out the appropriate
+        # offsets into the Context arrays
+        index = 0
+        for command in commands:
+            command.index = index
+            command.hash = '0x' + xxh3_64_hexdigest(command.name)
+            index += 1
+
+        index = 0
+        for extension in extensions:
+            extension.index = index
+            extension.hash = '0x' + xxh3_64_hexdigest(extension.name)
+            index += 1
 
     def __str__(self):
         return 'FeatureSet(name={self.name}, info={self.info}, extensions={extensions})' \

@@ -76,10 +76,22 @@ def collect_alias_information(commands):
             # add the alias set to all aliased functions
             for aliased_command in new_aliases:
                 alias[aliased_command] = new_aliases
+
     # remove self-aliases and (then) empty entries
     for command in commands:
         if len(alias[command.name]) == 1:
             del alias[command.name]
+
+    command_dict = dict((command.name, command) for command in commands)
+
+    for command in commands:
+        if command not in alias:
+            continue
+        known = set(alias[command])
+        knownidx = set()
+        for name in known:
+            knownidx.add((name, command_dict[name].index))
+        alias[command] = knownidx
 
     return OrderedDict(
         (command.name, sorted(alias[command.name]))

@@ -9,8 +9,8 @@
 
 {% block custom_declarations %}
 {% for api in feature_set.info.apis %}
-GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, GLADuserptrloadfunc load, void *userptr);
-GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, GLADloadfunc load);
+GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}VkPhysicalDevice physical_device, GLADuserptrloadfunc load, void *userptr);
+GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}VkPhysicalDevice physical_device, GLADloadfunc load);
 {% endfor %}
 
 {% if options.mx_global %}

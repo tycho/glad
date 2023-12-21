@@ -2,7 +2,7 @@
  * Full GLX
  *
  * GLAD: $GLAD --out-path=$tmp --api="glx,gl:core" c --loader
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/glx.c -ldl -lX11
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/glx.c -ldl -lX11
  * RUN: $tmp/test
  */
 

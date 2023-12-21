@@ -2,7 +2,7 @@
  * Full header only only GLX, without X11 as dependency
  *
  * GLAD: $GLAD --out-path=$tmp --api="glx,gl:core" c --loader --header-only
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include -ldl -DGLAD_GLX_NO_X11
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl -DGLAD_GLX_NO_X11
  * RUN: $tmp/test
  */
 

@@ -20,13 +20,12 @@ static void* glad_glx_dlopen_handle(void) {
     };
 
     if (_glx_handle == NULL) {
-        _glx_handle = glad_get_dlopen_handle(NAMES, sizeof(NAMES) / sizeof(NAMES[0]));
+        _glx_handle = glad_get_dlopen_handle(NAMES, GLAD_ARRAYSIZE(NAMES));
     }
 
     return _glx_handle;
 }
 
-{% if not options.on_demand %}
 int gladLoaderLoadGLX(Display *display, int screen) {
     int version = 0;
     void *handle = NULL;
@@ -48,27 +47,38 @@ int gladLoaderLoadGLX(Display *display, int screen) {
 
     return version;
 }
-{% endif %}
-
-{% if options.on_demand %}
-static GLADglxprocaddrfunc glad_glx_internal_loader_global_userptr = NULL;
-static GLADapiproc glad_glx_internal_loader_get_proc(const char *name) {
-    if (glad_glx_internal_loader_global_userptr == NULL) {
-        glad_glx_internal_loader_global_userptr = (GLADglxprocaddrfunc) glad_dlsym_handle(glad_glx_dlopen_handle(), "glXGetProcAddressARB");
-    }
-
-    return glad_glx_get_proc(GLAD_GNUC_EXTENSION (void *) glad_glx_internal_loader_global_userptr, name);
-}
-{% endif %}
 
 void gladLoaderUnloadGLX() {
     if (_glx_handle != NULL) {
         glad_close_dlopen_handle(_glx_handle);
         _glx_handle = NULL;
-{% if options.on_demand %}
-        glad_glx_internal_loader_global_userptr = NULL;
-{% endif %}
     }
+}
+
+{% if options.mx_global %}
+void gladLoaderResetGLX(void) {
+    gladLoaderResetGLXContext(gladGetGLXContext());
+}
+{% endif %}
+
+void gladLoaderResetGLX{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+{% if options.mx %}
+    memset(context, 0, sizeof(GladGLXContext));
+{% else %}
+{% for feature in feature_set.features %}
+    GLAD_{{ feature.name }} = 0;
+{% endfor %}
+
+{% for extension in feature_set.extensions %}
+    GLAD_{{ extension.name }} = 0;
+{% endfor %}
+
+{% for extension, commands in loadable() %}
+{% for command in commands %}
+    {{ command.name|ctx }} = NULL;
+{% endfor %}
+{% endfor %}
+{% endif %}
 }
 
 #endif /* GLAD_GLX */

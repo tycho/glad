@@ -1,122 +1,84 @@
 {% extends 'base_template.c' %}
 
-
-{% block debug_default_pre %}
-static void _pre_call_{{ feature_set.name }}_callback_default(const char *name, GLADapiproc apiproc, int len_args, ...) {
-    GLAD_UNUSED(len_args);
-
-    if (apiproc == NULL) {
-        fprintf(stderr, "GLAD: ERROR %s is NULL!\n", name);
-        return;
-    }
-    if (glad_glGetError == NULL) {
-        fprintf(stderr, "GLAD: ERROR glGetError is NULL!\n");
-        return;
-    }
-
-    (void) glad_glGetError();
-}
+{% block extnames %}
 {% endblock %}
-
-{% block debug_default_post %}
-static void _post_call_{{ feature_set.name }}_callback_default(void *ret, const char *name, GLADapiproc apiproc, int len_args, ...) {
-    GLenum error_code;
-
-    GLAD_UNUSED(ret);
-    GLAD_UNUSED(apiproc);
-    GLAD_UNUSED(len_args);
-
-    error_code = glad_glGetError();
-
-    if (error_code != GL_NO_ERROR) {
-        fprintf(stderr, "GLAD: ERROR %d in %s!\n", error_code, name);
-    }
-}
-{% endblock %}
-
 
 {% block loader %}
-static void glad_gl_free_extensions(char **exts_i) {
-    if (exts_i != NULL) {
-        unsigned int index;
-        for(index = 0; exts_i[index]; index++) {
-            free((void *) (exts_i[index]));
-        }
-        free((void *)exts_i);
-        exts_i = NULL;
-    }
-}
-static int glad_gl_get_extensions({{ template_utils.context_arg(',') }} const char **out_exts, char ***out_exts_i) {
+static int glad_gl_get_extensions({{ template_utils.context_arg(', ') }}uint64_t **out_exts, uint32_t *out_num_exts) {
+    uint32_t num_exts = 0;
+    uint64_t *exts = NULL;
+    const char *exts_str = NULL;
+    const char *cur = NULL;
+    const char *next = NULL;
+    uint32_t len = 0, j = 0;
+
 #if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0)
     if ({{ 'glGetStringi'|ctx }} != NULL && {{ 'glGetIntegerv'|ctx }} != NULL) {
         unsigned int index = 0;
-        unsigned int num_exts_i = 0;
-        char **exts_i = NULL;
-        {{ 'glGetIntegerv'|ctx }}(GL_NUM_EXTENSIONS, (int*) &num_exts_i);
-        exts_i = (char **) malloc((num_exts_i + 1) * (sizeof *exts_i));
-        if (exts_i == NULL) {
+        {{ 'glGetIntegerv'|ctx }}(GL_NUM_EXTENSIONS, (int*) &num_exts);
+        if (num_exts > 0) {
+            exts = (uint64_t *)calloc(num_exts, sizeof(uint64_t));
+        }
+        if (exts == NULL) {
             return 0;
         }
-        for(index = 0; index < num_exts_i; index++) {
+        for(index = 0; index < num_exts; index++) {
             const char *gl_str_tmp = (const char*) {{ 'glGetStringi'|ctx }}(GL_EXTENSIONS, index);
-            size_t len = strlen(gl_str_tmp) + 1;
+            size_t len = strlen(gl_str_tmp);
+            exts[index] = glad_hash_string(gl_str_tmp, len);
+        }
+    } else
+#endif
+    {
+        if ({{ 'glGetString'|ctx }} == NULL) {
+            return 0;
+        }
+        exts_str = (const char *){{ 'glGetString'|ctx }}(GL_EXTENSIONS);
+        if (exts_str == NULL) {
+            return 0;
+        }
 
-            char *local_str = (char*) malloc(len * sizeof(char));
-            if(local_str == NULL) {
-                exts_i[index] = NULL;
-                glad_gl_free_extensions(exts_i);
-                return 0;
+        /* This is done in two passes. The first pass counts up the number of
+        * extensions. The second pass copies them into an allocated block of memory. */
+        for (j = 0; j < 2; ++j) {
+            num_exts = 0;
+            cur = exts_str;
+            next = cur + strcspn(cur, " ");
+            while (1) {
+                cur += strspn(cur, " ");
+
+                if (!cur[0])
+                    break;
+
+                len = next - cur;
+
+                if (exts != NULL) {
+                    exts[num_exts++] = glad_hash_string(cur, len);
+                } else {
+                    num_exts++;
+                }
+
+                cur = next + strspn(next, " ");
+                next = cur + strcspn(cur, " ");
             }
 
-            memcpy(local_str, gl_str_tmp, len * sizeof(char));
-            exts_i[index] = local_str;
+            if (!exts)
+                exts = (uint64_t *)calloc(num_exts, sizeof(uint64_t));
         }
-        exts_i[index] = NULL;
-
-        *out_exts_i = exts_i;
-
-        return 1;
     }
-#else
-    GLAD_UNUSED(out_exts_i);
-#endif
-    if ({{ 'glGetString'|ctx }} == NULL) {
-        return 0;
-    }
-    *out_exts = (const char *){{ 'glGetString'|ctx }}(GL_EXTENSIONS);
+
+    *out_num_exts = num_exts;
+    *out_exts = exts;
+
     return 1;
 }
-static int glad_gl_has_extension(const char *exts, char **exts_i, const char *ext) {
-    if(exts_i) {
-        unsigned int index;
-        for(index = 0; exts_i[index]; index++) {
-            const char *e = exts_i[index];
-            if(strcmp(e, ext) == 0) {
-                return 1;
-            }
-        }
-    } else {
-        const char *extensions;
-        const char *loc;
-        const char *terminator;
-        extensions = exts;
-        if(extensions == NULL || ext == NULL) {
-            return 0;
-        }
-        while(1) {
-            loc = strstr(extensions, ext);
-            if(loc == NULL) {
-                return 0;
-            }
-            terminator = loc + strlen(ext);
-            if((loc == extensions || *(loc - 1) == ' ') &&
-                (*terminator == ' ' || *terminator == '\0')) {
-                return 1;
-            }
-            extensions = terminator;
-        }
-    }
-    return 0;
+
+static void glad_gl_free_extensions(uint64_t *exts) {
+    free(exts);
+}
+
+static int glad_gl_has_extension(uint64_t *exts, uint32_t num_exts, uint64_t ext) {
+    return glad_hash_search(exts, num_exts, ext);
 }
 
 static GLADapiproc glad_gl_get_proc_from_userptr(void *userptr, const char* name) {
@@ -125,18 +87,42 @@ static GLADapiproc glad_gl_get_proc_from_userptr(void *userptr, const char* name
 
 {% for api in feature_set.info.apis %}
 static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg(def='void') }}) {
-    const char *exts = NULL;
-    char **exts_i = NULL;
-    if (!glad_gl_get_extensions({{ 'context, ' if options.mx }}&exts, &exts_i)) return 0;
-
+{% if feature_set.extensions|select('supports', api)|count > 0  %}
+{% if not (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
+    static const uint16_t s_extIdx[] = {
 {% for extension in feature_set.extensions|select('supports', api) %}
-    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = glad_gl_has_extension(exts, exts_i, "{{ extension.name }}");
-{% else %}
-    GLAD_UNUSED(glad_gl_has_extension);
+        {{ "{:>4}".format(extension.index) }}, /* {{ extension.name }} */
 {% endfor %}
+    };
+{% endif %}
+    uint64_t *exts = NULL;
+    uint32_t num_exts = 0;
+    uint32_t i;
+    if (!glad_gl_get_extensions({{ 'context, ' if options.mx }}&exts, &num_exts)) return 0;
 
-    glad_gl_free_extensions(exts_i);
+    #pragma nounroll
+{# If the list is a consecutive 0 to N list, we can just scan the whole thing without emitting an array. #}
+{% if (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_hashes); ++i)
+        context->extArray[i] = glad_gl_has_extension(exts, num_exts, GLAD_{{ feature_set.name|api }}_ext_hashes[i]);
+{% else %}
+    for (i = 0; i < GLAD_ARRAYSIZE(s_extIdx); ++i) {
+        const uint32_t extIdx = s_extIdx[i];
+        context->extArray[extIdx] = glad_gl_has_extension(exts, num_exts, GLAD_{{ feature_set.name|api }}_ext_hashes[extIdx]);
+    }
+{% endif %}
 
+    glad_gl_free_extensions(exts);
+
+{% else %}
+{%if options.mx %}
+    GLAD_UNUSED(context);
+{% endif %}
+    GLAD_UNUSED(glad_gl_get_extensions);
+    GLAD_UNUSED(glad_gl_has_extension);
+    GLAD_UNUSED(glad_gl_free_extensions);
+    GLAD_UNUSED(GLAD_{{ feature_set.name|api }}_ext_hashes);
+{% endif %}
     return 1;
 }
 
@@ -171,7 +157,7 @@ static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='
     return GLAD_MAKE_VERSION(major, minor);
 }
 
-int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(',') }} GLADuserptrloadfunc load, void *userptr) {
+GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void *userptr) {
     int version;
 
     {{ 'glGetString'|ctx }} = (PFNGLGETSTRINGPROC) load(userptr, "glGetString");
@@ -204,8 +190,8 @@ int gladLoad{{ api|api }}UserPtr(GLADuserptrloadfunc load, void *userptr) {
 }
 {% endif %}
 
-int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(',') }} GLADloadfunc load) {
-    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context,' if options.mx }} glad_gl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
+int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}GLADloadfunc load) {
+    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context, ' if options.mx }}glad_gl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
 
 {% if options.mx_global %}

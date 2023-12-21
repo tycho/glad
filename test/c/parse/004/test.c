@@ -6,7 +6,7 @@
  * See also: 003
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core=3.3" --extensions="GL_KHR_debug" c
- * COMPILE: ! $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gl.c -ldl
+ * COMPILE: ! $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: true
  */
 

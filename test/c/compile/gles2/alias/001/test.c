@@ -4,7 +4,7 @@
  * Issue: https://github.com/Dav1dde/glad/issues/334
  *
  * GLAD: $GLAD --out-path=$tmp --api="gles2=3.2" --extensions="" c --alias
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gles2.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gles2.c -ldl
  * RUN: $tmp/test
  */
 

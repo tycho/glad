@@ -2,7 +2,7 @@
  * Full header only only GLX
  *
  * GLAD: $GLAD --out-path=$tmp --api="glx,gl:core" c --loader --header-only
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include -ldl -lX11
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl -lX11
  * RUN: $tmp/test
  */
 

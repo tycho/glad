@@ -2,7 +2,7 @@
  * No extensions core GL MX
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core" --extensions="" c --loader --mx --mx-global
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gl.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: $tmp/test
  */
 

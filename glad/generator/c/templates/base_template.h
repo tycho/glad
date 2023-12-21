@@ -63,30 +63,47 @@ extern "C" {
 {% endblock %}
 
 {% block feature_information %}
-{{ template_utils.write_feature_information(chain(feature_set.features, feature_set.extensions), with_runtime=not options.mx and not options.on_demand) }}
-{% endblock %}
+{{ template_utils.write_feature_information(chain(feature_set.features, feature_set.extensions), with_runtime=not options.mx) }}
 
+{% endblock %}
+{% block beforecommands %}
+{% endblock %}
 {% block commands %}
+
 {{ template_utils.write_function_typedefs(feature_set.commands) }}
 {% if not options.mx %}
 #ifdef __INTELLISENSE__
 {{ template_utils.write_function_definitions(feature_set.commands) }}
 #else
-{{ template_utils.write_function_declarations(feature_set.commands, debug=options.debug) }}
+{{ template_utils.write_function_declarations(feature_set.commands) }}
 #endif
 {% else %}
 typedef struct Glad{{ feature_set.name|api }}Context {
     void* userptr;
 
-{% for extension in chain(feature_set.features, feature_set.extensions) %}
-    unsigned {{ extension.name|ctx(member=True) }} : 1;
+{% for extension in feature_set.features %}
+    unsigned char {{ extension.name|ctx(member=True) }};
 {% endfor %}
 
+    union {
+        unsigned char extArray[{{feature_set.extensions|length}}];
+        struct {
+{% for extension in feature_set.extensions %}
+        /* {{ "{:>4}".format(extension.index)}} */ unsigned char {{ extension.name|ctx(member=True) }};
+{% endfor %}
+        };
+    };
+
+    union {
+        void *pfnArray[{{ feature_set.commands|length }}];
+        struct {
 {% for command in feature_set.commands %}
-{% call template_utils.protect(command) %}
-    {{ command.name|pfn }} {{ command.name|ctx(member=True) }};
+{% call template_utils.protect_pfn(command) %}
+        /* {{ "{:>4}".format(command.index) }} */ {{ command.name|pfn }} {{ command.name|ctx(member=True) }};
 {% endcall %}
 {% endfor %}
+        };
+    };
 
 {% if options.loader %}
     void* glad_loader_handle;
@@ -113,30 +130,15 @@ GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_
 {% endblock %}
 
 {% block declarations %}
-{% if options.on_demand %}
-{% for api in feature_set.info.apis %}
-GLAD_API_CALL void gladSet{{ api|api }}OnDemandLoader(GLADloadfunc loader);
-{% endfor %}
-{% endif %}
-
 {% if options.mx_global %}
 GLAD_API_CALL Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context(void);
 GLAD_API_CALL void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Context *context);
 {% endif %}
 
-{% if options.debug %}
-GLAD_API_CALL void gladSet{{ feature_set.name|api }}PreCallback(GLADprecallback cb);
-GLAD_API_CALL void gladSet{{ feature_set.name|api }}PostCallback(GLADpostcallback cb);
-
-GLAD_API_CALL void gladInstall{{ feature_set.name|api }}Debug(void);
-GLAD_API_CALL void gladUninstall{{ feature_set.name|api }}Debug(void);
-{% endif %}
 {% endblock %}
 
-{% if not options.on_demand %}
 {% block custom_declarations %}
 {% endblock %}
-{% endif %}
 
 {% if options.loader %}
 {% block loader_impl %}

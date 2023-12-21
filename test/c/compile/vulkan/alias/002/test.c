@@ -2,7 +2,7 @@
  * Full Vulkan with aliasing and without extensions
  *
  * GLAD: $GLAD --out-path=$tmp --api="vulkan" --extensions="" c --loader --alias
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/vulkan.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/vulkan.c -ldl
  * RUN: $tmp/test
  */
 

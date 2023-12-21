@@ -3,7 +3,7 @@
  * do not exist (e.g. because they don't exist in this profile).
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core=4.5" --extensions="" c --loader
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gl.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: $tmp/test
  */
 

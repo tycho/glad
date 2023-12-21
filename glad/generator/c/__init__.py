@@ -34,6 +34,14 @@ class Header(object):
         self.url = url
         self.requires = requires
 
+def count(objects):
+    return len(list(objects))
+
+def index_consecutive_0_to_N(objects):
+    indices = [obj.index for obj in objects]
+    if len(indices) == 0:
+        return False
+    return all(x == i for i, x in enumerate(indices))
 
 def type_to_c(parsed_type):
     result = ''
@@ -83,33 +91,6 @@ def is_void(t):
     # lower because of win API having VOID
     return type_to_c(t).lower() == 'void'
 
-
-def get_debug_impl(command, command_code_name=None):
-    command_code_name = command_code_name or command.name
-
-    impl = params_to_c(command.params)
-    func = param_names(command.params)
-
-    pre_callback = ', '.join(filter(None, [
-        '"{}"'.format(command.name),
-        '(GLADapiproc) {}'.format(command_code_name),
-        str(len(command.params)),
-        func
-    ]))
-
-    is_void_ret = is_void(command.proto.ret)
-
-    post_callback = ('NULL, ' if is_void_ret else '(void*) &ret, ') + pre_callback
-
-    ret = DebugReturn('', '', '')
-    if not is_void_ret:
-        ret = DebugReturn(
-            '{} ret;\n    '.format(type_to_c(command.proto.ret)),
-            'ret = ',
-            'return ret;'
-        )
-
-    return DebugArguments(impl, func, pre_callback, post_callback, ret)
 
 
 @jinja2_contextfilter
@@ -209,11 +190,6 @@ def replace_cpp_style_comments(inp):
 
 
 class CConfig(Config):
-    DEBUG = ConfigOption(
-        converter=bool,
-        default=False,
-        description='Enables generation of a debug build'
-    )
     ALIAS = ConfigOption(
         converter=bool,
         default=False,
@@ -239,17 +215,9 @@ class CConfig(Config):
         default=False,
         description='Include internal loaders for APIs'
     )
-    ON_DEMAND = ConfigOption(
-        converter=bool,
-        default=False,
-        description='On-demand function pointer loading, initialize on use (experimental)'
-    )
 
     __constraints__ = [
         RequirementConstraint(['MX_GLOBAL'], 'MX'),
-        UnsupportedConstraint(['MX'], 'DEBUG'),
-        # RequirementConstraint(['MX', 'DEBUG'], 'MX_GLOBAL')
-        UnsupportedConstraint(['MX'], 'ON_DEMAND')
     ]
 
 
@@ -336,7 +304,6 @@ class CGenerator(JinjaGenerator):
         self._headers = dict()
 
         self.environment.globals.update(
-            get_debug_impl=get_debug_impl,
             loadable=loadable,
             enum_member=enum_member,
             chain=itertools.chain
@@ -350,7 +317,9 @@ class CGenerator(JinjaGenerator):
             pfn=pfn,
             ctx=ctx,
             no_prefix=jinja2_contextfilter(lambda ctx, value: strip_specification_prefix(value, ctx['spec'])),
-            c_commands=c_commands
+            c_commands=c_commands,
+            index_consecutive_0_to_N=index_consecutive_0_to_N,
+            count=count,
         )
 
         self.environment.tests.update(
@@ -382,9 +351,9 @@ class CGenerator(JinjaGenerator):
         args = JinjaGenerator.get_template_arguments(self, spec, feature_set, config)
 
         # TODO allow MX for every specification/api
-        if spec.name not in (EGL.NAME, VK.NAME, GL.NAME):
-            args['options']['mx'] = False
-            args['options']['mx_global'] = False
+        #if spec.name not in (EGL.NAME, VK.NAME, GL.NAME):
+        #    args['options']['mx'] = False
+        #    args['options']['mx_global'] = False
 
         args.update(
             aliases=collect_alias_information(feature_set.commands),
