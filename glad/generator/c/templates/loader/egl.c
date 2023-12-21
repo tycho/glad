@@ -34,7 +34,7 @@ static void* glad_egl_dlopen_handle({{ template_utils.context_arg(def='void') }}
 #endif
 
     if ({{ template_utils.handle() }} == NULL) {
-        {{ template_utils.handle() }} = glad_get_dlopen_handle(NAMES, sizeof(NAMES) / sizeof(NAMES[0]));
+        {{ template_utils.handle() }} = glad_get_dlopen_handle(NAMES, GLAD_ARRAYSIZE(NAMES));
     }
 
     return {{ template_utils.handle() }};
@@ -47,7 +47,6 @@ static struct _glad_egl_userptr glad_egl_build_userptr(void *handle) {
     return userptr;
 }
 
-{% if not options.on_demand %}
 int gladLoaderLoadEGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(',') }} EGLDisplay display) {
     int version = 0;
     void *handle;
@@ -68,22 +67,10 @@ int gladLoaderLoadEGL{{ 'Context' if options.mx }}({{ template_utils.context_arg
 
     return version;
 }
-{% endif %}
 
 {% if options.mx_global %}
 int gladLoaderLoadEGL(EGLDisplay display) {
     return gladLoaderLoadEGLContext(gladGet{{ feature_set.name|api }}Context(), display);
-}
-{% endif %}
-
-{% if options.on_demand %}
-{% call template_utils.zero_initialized() %}static struct _glad_egl_userptr glad_egl_internal_loader_global_userptr{% endcall %}
-static GLADapiproc glad_egl_internal_loader_get_proc(const char *name) {
-    if (glad_egl_internal_loader_global_userptr.handle == NULL) {
-        glad_egl_internal_loader_global_userptr = glad_egl_build_userptr(glad_egl_dlopen_handle());
-    }
-
-    return glad_egl_get_proc((void *) &glad_egl_internal_loader_global_userptr, name);
 }
 {% endif %}
 
@@ -97,9 +84,6 @@ void gladLoaderUnloadEGL{{ 'Context' if options.mx }}({{ template_utils.context_
     if ({{ template_utils.handle() }} != NULL) {
         glad_close_dlopen_handle({{ template_utils.handle() }});
         {{ template_utils.handle() }} = NULL;
-{% if options.on_demand %}
-        glad_egl_internal_loader_global_userptr.handle = NULL;
-{% endif %}
     }
 
 {% if not options.mx %}
@@ -119,7 +103,6 @@ void gladLoaderResetEGL{{ 'Context' if options.mx }}({{ template_utils.context_a
 {% if options.mx %}
     memset(context, 0, sizeof(GladEGLContext));
 {% else %}
-{% if not options.on_demand %}
 {% for feature in feature_set.features %}
     GLAD_{{ feature.name }} = 0;
 {% endfor %}
@@ -127,7 +110,6 @@ void gladLoaderResetEGL{{ 'Context' if options.mx }}({{ template_utils.context_a
 {% for extension in feature_set.extensions %}
     GLAD_{{ extension.name }} = 0;
 {% endfor %}
-{% endif %}
 
 {% for extension, commands in loadable() %}
 {% for command in commands %}

@@ -10,7 +10,7 @@ readme = "long_description.md"
 license = { file = "LICENSE" }
 authors = [{ name = "David Herberth", email = "github@dav1d.de" }]
 maintainers = [{ name = "David Herberth", email = "github@dav1d.de" }]
-dependencies = ["Jinja2>=2.7,<4.0"]
+dependencies = ["Jinja2>=2.7,<4.0", "xxhash>=3.4.1"]
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Environment :: Console',

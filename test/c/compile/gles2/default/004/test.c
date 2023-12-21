@@ -3,7 +3,7 @@
  * Related Issues: #387
  *
  * GLAD: $GLAD --out-path=$tmp --api="egl,gles2" c --loader --header-only
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include -ldl -Wno-pedantic
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl -Wno-pedantic
  * RUN: $tmp/test
  */
 

@@ -2,7 +2,7 @@
  * Full core GL, with aliasing
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core" c --loader --alias
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gl.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: $tmp/test
  */
 

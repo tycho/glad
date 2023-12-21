@@ -2,7 +2,7 @@
  * No extensions core GL header only
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core" --extensions="" c --loader --header-only
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl
  * RUN: $tmp/test
  */
 

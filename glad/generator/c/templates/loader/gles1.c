@@ -39,7 +39,7 @@ static void* glad_gles1_dlopen_handle({{ template_utils.context_arg(def='void') 
 #endif
 
     if ({{ loader_handle }} == NULL) {
-        {{ loader_handle }} = glad_get_dlopen_handle(NAMES, sizeof(NAMES) / sizeof(NAMES[0]));
+        {{ loader_handle }} = glad_get_dlopen_handle(NAMES, GLAD_ARRAYSIZE(NAMES));
     }
 
     return {{ loader_handle }};
@@ -52,7 +52,6 @@ static struct _glad_gles1_userptr glad_gles1_build_userptr(void *handle) {
     return userptr;
 }
 
-{% if not options.on_demand %}
 int gladLoaderLoadGLES1{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
     int version = 0;
     void *handle = NULL;
@@ -77,18 +76,6 @@ int gladLoaderLoadGLES1{{ 'Context' if options.mx }}({{ template_utils.context_a
 
     return version;
 }
-{% endif %}
-
-{% if options.on_demand %}
-{% call template_utils.zero_initialized() %}static struct _glad_gles1_userptr glad_gles1_internal_loader_global_userptr{% endcall %}
-static GLADapiproc glad_gles1_internal_loader_get_proc(const char *name) {
-    if (glad_gles1_internal_loader_global_userptr.handle == NULL) {
-        glad_gles1_internal_loader_global_userptr = glad_gles1_build_userptr(glad_gles1_dlopen_handle());
-    }
-
-    return glad_gles1_get_proc((void *) &glad_gles1_internal_loader_global_userptr, name);
-}
-{% endif %}
 
 {% if options.mx_global %}
 int gladLoaderLoadGLES1(void) {
@@ -100,9 +87,6 @@ void gladLoaderUnloadGLES1{{ 'Context' if options.mx }}({{ template_utils.contex
     if ({{ loader_handle }} != NULL) {
         glad_close_dlopen_handle({{ loader_handle }});
         {{ loader_handle }} = NULL;
-{% if options.on_demand %}
-        glad_gles1_internal_loader_global_userptr.handle = NULL;
-{% endif %}
     }
 }
 

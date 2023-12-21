@@ -27,6 +27,21 @@
 {% endif %}
 {% endmacro %}
 
+
+{% macro protect_pfn(symbol) %}
+{% set protections = spec.protections(symbol, feature_set=feature_set) %}
+{% if protections %}
+#if {{ protections|map('defined')|join(' || ') }}
+{% endif %}
+{{ caller() }}
+{%- if protections %}
+#else
+        /* {{ "{:>4}".format(symbol.index) }} */ void *paddingPfn{{ symbol.index }};
+#endif
+{% endif %}
+{% endmacro %}
+
+
 {% macro write_feature_information(extensions, with_runtime=True) %}
 {% for extension in extensions %}
 {% call protect(extension) %}
@@ -110,16 +125,11 @@ typedef {{ command.proto.ret|type_to_c }} (GLAD_API_PTR *{{ command.name|pfn }})
 {% endfor %}
 {% endmacro %}
 
-{% macro write_function_declarations(commands, debug=False) %}
+{% macro write_function_declarations(commands) %}
 {% for command in commands %}
 {% call protect(command) %}
 GLAD_API_CALL {{ command.name|pfn }} glad_{{ command.name }};
-{% if debug %}
-GLAD_API_CALL {{ command.name|pfn }} glad_debug_{{ command.name }};
-#define {{ command.name }} glad_debug_{{ command.name }}
-{% else %}
 #define {{ command.name }} glad_{{ command.name }}
-{% endif %}
 {% endcall %}
 {% endfor %}
 {% endmacro %}

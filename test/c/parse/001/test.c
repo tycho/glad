@@ -4,7 +4,7 @@
  * Related Issues: #137, #139
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core=4.3" --extensions="" c
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gl.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: $tmp/test
  */
 

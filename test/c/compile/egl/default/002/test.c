@@ -2,7 +2,7 @@
  * EGL 1.0
  *
  * GLAD: $GLAD --out-path=$tmp --api="egl=1.0" c --loader
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/egl.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/egl.c -ldl
  * RUN: $tmp/test
  */
 

@@ -2,7 +2,7 @@
  * Issue #350, missing ENUM_MAX values
  *
  * GLAD: $GLAD --out-path=$tmp --api="vulkan=1.1" c
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/vulkan.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/vulkan.c -ldl
  * RUN: $tmp/test
  */
 

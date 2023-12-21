@@ -2,7 +2,7 @@
  * Full GLES1
  *
  * GLAD: $GLAD --out-path=$tmp --api="gles1" c
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/gles1.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gles1.c -ldl
  * RUN: $tmp/test
  */
 

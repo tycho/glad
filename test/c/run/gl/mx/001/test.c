@@ -2,7 +2,7 @@
  * MX Core 3.3 profile using glfw to load
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core" c --mx
- * COMPILE: $GCC -Wno-pedantic $test -o $tmp/test -I$tmp/include $tmp/src/gl.c -ldl -lglfw
+ * COMPILE: $GCC -Wno-pedantic $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl -lglfw
  * RUN: $tmp/test
  */
 

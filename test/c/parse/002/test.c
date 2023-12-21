@@ -4,7 +4,7 @@
  * Make sure the aliased type is part generated, since the alias is done through a typedef.
  *
  * GLAD: $GLAD --out-path=$tmp --api="vulkan=1.1" --extensions="VK_NV_ray_tracing" c
- * COMPILE: $GCC $test -o $tmp/test -I$tmp/include $tmp/src/vulkan.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/vulkan.c -ldl
  * RUN: $tmp/test
  */
 
