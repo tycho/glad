@@ -50,7 +50,7 @@ def one_of(choices):
 
 
 class ConfigOption(object):
-    def __init__(self, description, converter=None, default=None, required=False, help=None):
+    def __init__(self, description, converter=None, default=None, required=False, force_true=False, help=None):
         self.converter = converter
         if self.converter is None:
             self.converter = identity
@@ -58,6 +58,7 @@ class ConfigOption(object):
         self.description = description
         self.default = default
         self.required = required
+        self.force_true = force_true
         self.help = help
 
         try:
@@ -83,6 +84,9 @@ class ConfigOption(object):
             args['required'] = True
         else:
             if self.converter is bool:
+                if self.force_true:
+                    args['action'] = 'store_true'
+                    args['default'] = True
                 args['action'] = 'store_false' if self.default else 'store_true'
                 args.pop('type')
             else:
