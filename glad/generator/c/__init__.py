@@ -196,11 +196,13 @@ class CConfig(Config):
         description='Enables function pointer aliasing'
     )
     MX = ConfigOption(
+        force_true=True,
         converter=bool,
         default=False,
         description='Enables support for multiple GL contexts'
     )
     MX_GLOBAL = ConfigOption(
+        force_true=True,
         converter=bool,
         default=False,
         description='Mimic global GL functions with context switching'
