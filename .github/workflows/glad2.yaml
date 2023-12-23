@@ -51,7 +51,7 @@ jobs:
         run: PRINT_MESSAGE=1 xvfb-run --auto-servernum ./utility/test.sh
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+        if: always() && env.GITEA_ACTIONS != 'true' && env.ACT != 'true'
         with:
           files: test-report.xml
           comment_mode: off
