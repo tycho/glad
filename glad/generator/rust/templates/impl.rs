@@ -122,10 +122,12 @@ pub fn load<F>(mut loadfn: F) -> functions::{{ ctx_name }} where F: FnMut(&'stat
         {% endfor %}
     };
 
-    {% for command, caliases in aliases|dictsort %}
-    {% for alias in caliases|reject('equalto', command) %}
-    {{ template_utils.protect(command) }} ctx.{{ command|no_prefix }}.aliased(std::ptr::addr_of!(ctx.{{ alias|no_prefix }}));
+    {% for command in feature_set.commands|sort(attribute='name') %}
+    {% if aliases.get(command.name, [])|length > 0 %}
+    {% for alias in aliases.get(command.name, [])|reject('equalto', (command.name, command.index)) %}
+    {{ template_utils.protect(command.name) }} ctx.{{ command.name|no_prefix }}.aliased(std::ptr::addr_of!(ctx.{{ alias[0]|no_prefix }}));
     {% endfor %}
+    {% endif %}
     {% endfor %}
 
      ctx
@@ -134,13 +136,15 @@ pub fn load<F>(mut loadfn: F) -> functions::{{ ctx_name }} where F: FnMut(&'stat
 pub fn load<F>(mut loadfn: F) where F: FnMut(&'static str) -> *const c_void {
     unsafe {
         {% for command in feature_set.commands %}
-        {{ template_utils.protect(command) }} storage::{{ command.name | no_prefix }}.set_ptr(loadfn("{{ command.name }}"));
+        {{ template_utils.protect(command.name) }} storage::{{ command.name | no_prefix }}.set_ptr(loadfn("{{ command.name }}"));
         {% endfor %}
 
-        {% for command, caliases in aliases|dictsort %}
-        {% for alias in caliases|reject('equalto', command) %}
-        {{ template_utils.protect(command) }}{{ template_utils.protect(alias) }} storage::{{ command|no_prefix }}.aliased(std::ptr::addr_of!(storage::{{ alias|no_prefix }}));
+        {% for command in feature_set.commands %}
+        {% if aliases.get(command.name, [])|length > 0 %}
+        {% for alias in aliases.get(command.name, [])|reject('equalto', (command.name, command.index)) %}
+        {{ template_utils.protect(command.name) }}{{ template_utils.protect(alias[0]) }} storage::{{ command.name|no_prefix }}.aliased(std::ptr::addr_of!(storage::{{ alias[0]|no_prefix }}));
         {% endfor %}
+        {% endif%}
         {% endfor %}
     }
 }

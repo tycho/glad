@@ -42,6 +42,7 @@ pub type EGLTime = khronos_utime_nanoseconds_t;
 pub type EGLTimeNV = khronos_utime_nanoseconds_t;
 pub type EGLuint64KHR = khronos_uint64_t;
 pub type EGLuint64NV = khronos_utime_nanoseconds_t;
+pub type EGLFrameTokenANGLE = khronos_uint64_t;
 pub struct AHardwareBuffer;
 
 pub type EGLSetBlobFuncANDROID = extern "system" fn (
