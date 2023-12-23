@@ -2,6 +2,18 @@ on: [push, pull_request]
 
 name: glad2
 
+permissions:
+  contents: read
+  issues: read
+  checks: write
+  pull-requests: write
+
+
+env:
+  WINEDLLOVERRIDES: mscoree,mshtml=
+  WINEARCH: win64
+  WINE: wine
+
 jobs:
   test:
     name: Test
@@ -21,21 +33,38 @@ jobs:
           pip install -r requirements.txt
       - name: Install dependencies
         run: |
+          sudo env DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386
           sudo env DEBIAN_FRONTEND=noninteractive apt-get update
-          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y gcc g++ gcc-mingw-w64 g++-mingw-w64 cargo rustc libglfw3-dev wine winetricks xvfb libxxf86vm-dev libxi-dev libxcursor-dev libxinerama-dev
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y gcc g++ gcc-mingw-w64 g++-mingw-w64 cargo rustc libglfw3-dev wine wine32 wine64 winetricks xvfb libxxf86vm-dev libxi-dev libxcursor-dev libxinerama-dev
       - name: Setup environment
         run: |
           rm -rf .wine
           mkdir -p .wine
           export WINEPREFIX="$(pwd)/.wine"
-          export WINEDLLOVERRIDES="mscoree,mshtml="
 
           winetricks nocrashdialog
       - name: Run Tests
         run: PRINT_MESSAGE=1 xvfb-run --auto-servernum ./utility/test.sh
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+      - name: Upload Test Results
         if: always()
+        uses: actions/upload-artifact@v3
         with:
-          files: test-report.xml
-          comment_mode: off
+          name: unit-tests
+          path: 'test-report.xml'
+
+  publish-test-results:
+    name: "Publish Unit Tests Results"
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: test-results
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: "test-results/*.xml"
