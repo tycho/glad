@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo env DEBIAN_FRONTEND=noninteractive apt-get update
-          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y gcc g++ gcc-mingw-w64 g++-mingw-w64 rustc libglfw3-dev wine winetricks xvfb libxxf86vm-dev libxi-dev libxcursor-dev libxinerama-dev
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y gcc g++ gcc-mingw-w64 g++-mingw-w64 cargo rustc libglfw3-dev wine winetricks xvfb libxxf86vm-dev libxi-dev libxcursor-dev libxinerama-dev
       - name: Setup environment
         run: |
           rm -rf .wine
