@@ -206,7 +206,7 @@ class FeatureSet(object):
             name,
             FeatureSetInfo(info, merged=True),
             list(features.values()),
-            list(extensions.values()),
+            sorted(list(extensions.values()), key=lambda x: x.name),
             list(types.values()),
             list(enums.values()),
             list(commands.values())
