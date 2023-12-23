@@ -43,6 +43,10 @@ jobs:
           export WINEPREFIX="$(pwd)/.wine"
 
           winetricks nocrashdialog
+      ## Step can be used for debugging environment state, if needed
+      #- name: Log environment state
+      #  run: |
+      #    export
       - name: Run Tests
         run: PRINT_MESSAGE=1 xvfb-run --auto-servernum ./utility/test.sh
       - name: Publish Test Results
