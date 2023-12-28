@@ -83,7 +83,7 @@ int gladLoaderLoadGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(
     if (handle) {
         userptr = glad_gl_build_userptr(handle);
 
-        version = gladLoadGL{{ 'Context' if options.mx }}UserPtr({{ 'context,' if options.mx }}glad_gl_get_proc, &userptr);
+        version = gladLoadGL{{ 'Context' if options.mx }}UserPtr({{ 'context, ' if options.mx }}glad_gl_get_proc, &userptr);
 
         if (!version && did_load) {
             gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
@@ -117,9 +117,7 @@ void gladLoaderResetGL{{ 'Context' if options.mx }}({{ template_utils.context_ar
 void gladLoaderResetGL(void) {
     gladLoaderResetGLContext(gladGetGLContext());
 }
-{% endif %}
 
-{% if options.mx_global %}
 int gladLoaderLoadGL(void) {
     return gladLoaderLoadGLContext(gladGet{{ feature_set.name|api }}Context());
 }
