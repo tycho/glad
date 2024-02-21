@@ -42,11 +42,11 @@ function run_test {
     local wd=$(pwd)
 
     local output;
-    output=$({
+    output=$( (
         execute ${glad} && \
             execute ${compile} && \
             execute ${run}
-    } 2>& 1)
+    ) 2>& 1)
     local status=$?
 
     time=$(($(date +%s) - ${time}))
