@@ -507,10 +507,12 @@ class CGenerator(JinjaGenerator):
             if not os.path.exists(directory_path):
                 os.makedirs(directory_path)
 
-            if not os.path.exists(path):
-                content = self._read_header(header.url)
-                with open(path, 'wb') as dest:
-                    dest.write(content.encode('utf-8'))
+            if os.path.exists(path):
+                os.remove(path)
+
+            content = self._read_header(header.url)
+            with open(path, 'wb') as dest:
+                dest.write(content.encode('utf-8'))
 
     def _read_header(self, url):
         if url not in self._headers:
