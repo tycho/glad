@@ -565,7 +565,7 @@ class Specification(object):
                     # symbol found in at least one unprotected extension
                     return list()
 
-        return list(set(protections))
+        return sorted(list(set(protections)))
 
     def find(self, require, api, profile, recursive=False):
         """
