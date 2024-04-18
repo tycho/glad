@@ -7,10 +7,14 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          python-version: '3.x'
+          submodules: 'true'
+      - name: Setup PyPy3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: 'pypy3.9'
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
