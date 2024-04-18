@@ -25,7 +25,8 @@ jobs:
           sudo apt-get install gcc g++ gcc-mingw-w64 g++-mingw-w64 rustc libglfw3-dev wine winetricks xvfb libxxf86vm-dev libxi-dev libxcursor-dev libxinerama-dev
       - name: Setup environment
         run: |
-          mkdir .wine
+          rm -rf .wine
+          mkdir -p .wine
           export WINEPREFIX="$(pwd)/.wine"
           export WINEDLLOVERRIDES="mscoree,mshtml="
 
