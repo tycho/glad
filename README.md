@@ -42,6 +42,12 @@ The full code: [hellowindow2.cpp](example/c++/hellowindow2.cpp)
 
 More examples in the [examples directory](example/) of this repository.
 
+## Plugins
+
+Glad [plugins](https://github.com/Dav1dde/glad/wiki/Extending-Glad)
+maintained by the community to add support for more languages:
+
+- [Fortran](https://github.com/AarnoldGad/glad-fortran).
 
 ## Documentation
 
