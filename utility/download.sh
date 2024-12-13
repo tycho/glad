@@ -58,3 +58,4 @@ download_file "${TARGET}/vulkan_video_codec_h265std_encode.h" https://raw.github
 
 download_file "${TARGET}/vulkan_video_codec_av1std.h" https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_av1std.h
 download_file "${TARGET}/vulkan_video_codec_av1std_decode.h" https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_av1std_decode.h
+download_file "${TARGET}/vulkan_video_codec_av1std_encode.h" https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_av1std_encode.h
