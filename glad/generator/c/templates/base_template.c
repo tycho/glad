@@ -97,7 +97,9 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
     };
     uint32_t i;
     if(!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
+    #ifdef __clang__
     #pragma nounroll
+    #endif
     for (i = 0; i < GLAD_ARRAYSIZE(s_pfnIdx); ++i) {
         const uint16_t pfnIdx = s_pfnIdx[i];
         context->pfnArray[pfnIdx] = load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
@@ -127,7 +129,9 @@ static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(d
     void **pfnArray = context->pfnArray;
     uint32_t i;
 
+    #ifdef __clang__
     #pragma nounroll
+    #endif
     for (i = 0; i < GLAD_ARRAYSIZE(s_aliases); ++i) {
         const GladAliasPair_t *pAlias = &s_aliases[i];
         if (pfnArray[pAlias->first] == NULL && pfnArray[pAlias->second] != NULL) {

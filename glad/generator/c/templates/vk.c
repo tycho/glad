@@ -112,7 +112,9 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     uint64_t *extensions = NULL;
     if (!glad_vk_get_extensions({{'context, ' if options.mx }}physical_device, &extension_count, &extensions)) return 0;
 
+    #ifdef __clang__
     #pragma nounroll
+    #endif
 {# If the list is a consecutive 0 to N list, we can just scan the whole thing without emitting an array. #}
 {% if feature_set.extensions|index_consecutive_0_to_N %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_hashes); ++i)
