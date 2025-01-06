@@ -5,19 +5,29 @@
 {% include 'loader/library.c' %}
 
 
-static uint64_t DEVICE_FUNCTIONS[] = {
+static uint64_t DEVICE_COMMANDS[] = {
 {% for command in device_commands %}
     {{ command.hash }}, /* {{ command.name }} */
 {% endfor %}
 };
 
-static int glad_vulkan_is_device_function(const char *name) {
+static int glad_vulkan_is_device_command(const char *name) {
     /* Exists as a workaround for:
      * https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues/2323
      *
      * `vkGetDeviceProcAddr` does not return NULL for non-device functions.
      */
-    return glad_hash_search(DEVICE_FUNCTIONS, GLAD_ARRAYSIZE(DEVICE_FUNCTIONS), glad_hash_string(name, strlen(name)));
+    return glad_hash_search(DEVICE_COMMANDS, GLAD_ARRAYSIZE(DEVICE_COMMANDS), glad_hash_string(name, strlen(name)));
+}
+
+static uint64_t GLOBAL_COMMANDS[] = {
+{% for command in global_commands %}
+    {{ command.hash }}, /* {{ command.name }} */
+{% endfor %}
+};
+
+static int glad_vulkan_is_global_command(const char *name) {
+    return glad_hash_search(GLOBAL_COMMANDS, GLAD_ARRAYSIZE(GLOBAL_COMMANDS), glad_hash_string(name, strlen(name)));
 }
 
 struct _glad_vulkan_userptr {
@@ -32,16 +42,15 @@ static GLADapiproc glad_vulkan_get_proc(void *vuserptr, const char *name) {
     struct _glad_vulkan_userptr userptr = *(struct _glad_vulkan_userptr*) vuserptr;
     PFN_vkVoidFunction result = NULL;
 
-    if (userptr.vk_device != NULL && glad_vulkan_is_device_function(name)) {
+    if (userptr.vk_device != NULL && glad_vulkan_is_device_command(name)) {
         result = userptr.get_device_proc_addr(userptr.vk_device, name);
-    }
-
-    if (result == NULL && userptr.vk_instance != NULL) {
-        result = userptr.get_instance_proc_addr(userptr.vk_instance, name);
-    }
-
-    if(result == NULL) {
-        result = (PFN_vkVoidFunction) glad_dlsym_handle(userptr.vk_handle, name);
+    } else {
+        bool is_global_command = glad_vulkan_is_global_command(name);
+        if (is_global_command) {
+            result = userptr.get_instance_proc_addr(NULL, name);
+        } else if (userptr.vk_instance != NULL) {
+            result = userptr.get_instance_proc_addr(userptr.vk_instance, name);
+        }
     }
 
     return (GLADapiproc) result;
