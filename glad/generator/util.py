@@ -24,6 +24,22 @@ def is_device_command(self):
     return first_param.type.type in ('VkDevice', 'VkCommandBuffer', 'VkQueue')
 
 
+def is_global_command(self):
+    """
+    Returns true if the command is a global Vulkan command.
+
+    :return: boolean indicating if the command is global
+    """
+    # See https://registry.khronos.org/vulkan/specs/latest/man/html/vkGetInstanceProcAddr.html
+    dlsym_commands = [
+        "vkCreateInstance",
+        "vkEnumerateInstanceExtensionProperties",
+        "vkEnumerateInstanceLayerProperties",
+        "vkEnumerateInstanceVersion",
+    ]
+    return self.name in dlsym_commands
+
+
 def strip_specification_prefix(name, spec_name=None):
     """
     Used to strip the specification name prefix from a

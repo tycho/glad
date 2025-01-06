@@ -11,6 +11,7 @@ from glad.sink import LoggingSink
 from glad.generator import JinjaGenerator
 from glad.generator.util import (
     is_device_command,
+    is_global_command,
     strip_specification_prefix,
     collect_alias_information,
     find_extensions_with_aliases,
@@ -366,7 +367,8 @@ class CGenerator(JinjaGenerator):
         args.update(
             aliases=collect_alias_information(feature_set.commands),
             # required for vulkan loader:
-            device_commands=list(filter(is_device_command, feature_set.commands))
+            device_commands=list(filter(is_device_command, feature_set.commands)),
+            global_commands=list(filter(is_global_command, feature_set.commands))
         )
 
         return args
