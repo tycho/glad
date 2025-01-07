@@ -49,6 +49,9 @@ def enum_type(enum, feature_set):
         if referenced is not None and referenced.parent_type is not None:
             return 'u32'
 
+    if enum.value is None:
+        raise ValueError('unable to find value for enum {}'.format(enum.name))
+
     # we could return GLenum and friends here
     # but thanks to type aliasing we don't have to
     # this makes handling types for different specifications
