@@ -52,12 +52,14 @@ static const char *GLAD_{{ feature_set.name|api }}_ext_names[] = {
 
 {% endblock %}
 {% block exthashes %}
+{% if not options.no_extension_detection %}
 static uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
 {% for extension in feature_set.extensions %}
     /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
 {% endfor %}
 };
 
+{% endif %}
 {% endblock %}
 {% set global_context = 'glad_' + feature_set.name + '_context' -%}
 {% block variables %}
@@ -96,7 +98,9 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 {% endfor %}
     };
     uint32_t i;
+{% if not options.no_extension_detection %}
     if(!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
+{% endif %}
     #ifdef __clang__
     #pragma nounroll
     #endif

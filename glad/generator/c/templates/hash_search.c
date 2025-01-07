@@ -22,6 +22,7 @@ GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, 
     }
     return false;
 }
+{% if not options.no_extension_detection %}
 
 GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
 {
@@ -31,6 +32,7 @@ GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
     else if (a < b) return -1;
     else            return 0;
 }
+{% endif %}
 
 {% endif %}
 {% if search_type == 1 %}

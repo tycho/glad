@@ -4,6 +4,7 @@
 {% endblock %}
 
 {% block loader %}
+{% if not options.no_extension_detection %}
 static int glad_vk_get_extensions({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, uint32_t *out_extension_count, uint64_t **out_extensions) {
     uint32_t i;
     uint32_t instance_extension_count = 0;
@@ -102,11 +103,13 @@ static int glad_vk_has_extension(uint64_t *extensions, uint64_t extension_count,
     return glad_hash_search(extensions, extension_count, name);
 }
 
+{% endif %}
 static GLADapiproc glad_vk_get_proc_from_userptr(void *userptr, const char* name) {
     return (GLAD_GNUC_EXTENSION (GLADapiproc (*)(const char *name)) userptr)(name);
 }
 
 {% for api in feature_set.info.apis %}
+{% if not options.no_extension_detection %}
 static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
 {% if feature_set.extensions|length > 0 %}
 {% if not feature_set.extensions|index_consecutive_0_to_N %}
@@ -156,6 +159,7 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     return 1;
 }
 
+{% endif %}
 static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
     int major = 1;
     int minor = 0;
@@ -206,7 +210,9 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
     glad_vk_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
 
+{% if not options.no_extension_detection %}
     if (!glad_vk_find_extensions_{{ api|lower }}({{ 'context,' if options.mx }} physical_device)) return 0;
+{% endif %}
 {% for extension, _ in loadable(feature_set.extensions) %}
 {% call template_utils.protect(extension) %}
     glad_vk_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
