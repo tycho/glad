@@ -218,6 +218,11 @@ class CConfig(Config):
         default=False,
         description='Include internal loaders for APIs'
     )
+    NO_EXTENSION_DETECTION = ConfigOption(
+        converter=bool,
+        default=False,
+        description='Disable API extension detection'
+    )
 
     __constraints__ = [
         RequirementConstraint(['MX_GLOBAL'], 'MX'),
@@ -359,10 +364,9 @@ class CGenerator(JinjaGenerator):
     def get_template_arguments(self, spec, feature_set, config):
         args = JinjaGenerator.get_template_arguments(self, spec, feature_set, config)
 
-        # TODO allow MX for every specification/api
-        #if spec.name not in (EGL.NAME, VK.NAME, GL.NAME):
-        #    args['options']['mx'] = False
-        #    args['options']['mx_global'] = False
+        # Disabling extension detection only makes sense on Vulkan for now
+        if spec.name not in (VK.NAME):
+            args['options']['no_extension_detection'] = False
 
         # Search and sort parameters for string hashes
         # 0 = binary search, 1 = explicit SIMD, 2 = auto-vectorized, 3 = naive linear search
