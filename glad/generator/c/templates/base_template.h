@@ -108,6 +108,8 @@ typedef struct Glad{{ feature_set.name|api }}Context {
 {% if options.loader %}
     void* glad_loader_handle;
 {% endif %}
+{% block extracontextmembers %}
+{% endblock %}
 } Glad{{ feature_set.name|api }}Context;
 
 {% if options.mx_global %}

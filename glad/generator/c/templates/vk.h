@@ -1,5 +1,11 @@
 {% extends 'base_template.h' %}
 
+{% block extracontextmembers %}
+    uint32_t glad_vk_instance_version;
+    uint32_t glad_vk_device_version;
+    int glad_found_instance_exts;
+    int glad_found_device_exts;
+{% endblock %}
 
 {% block header %}
 {{ template_utils.header_error(feature_set.name, feature_set.name.upper() + '_H_', name) }}
