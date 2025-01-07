@@ -364,11 +364,23 @@ class CGenerator(JinjaGenerator):
         #    args['options']['mx'] = False
         #    args['options']['mx_global'] = False
 
+        # Search and sort parameters for string hashes
+        # 0 = binary search, 1 = explicit SIMD, 2 = auto-vectorized, 3 = naive linear search
+        # If search_type is set to 0, you MUST set hash_sort_key='hash', it
+        # does not matter otherwise.
+        search_type = 0
+        if search_type == 0:
+            hash_sort_key = 'hash'
+        else:
+            hash_sort_key = 'name'
+
         args.update(
             aliases=collect_alias_information(feature_set.commands),
             # required for vulkan loader:
             device_commands=list(filter(is_device_command, feature_set.commands)),
-            global_commands=list(filter(is_global_command, feature_set.commands))
+            global_commands=list(filter(is_global_command, feature_set.commands)),
+            search_type=search_type,
+            hash_sort_key=hash_sort_key,
         )
 
         return args

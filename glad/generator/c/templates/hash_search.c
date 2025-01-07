@@ -1,10 +1,39 @@
 #ifndef GLAD_IMPL_UTIL_HASHSEARCH_C_
 #define GLAD_IMPL_UTIL_HASHSEARCH_C_
 
-{# Optionally, use a linear search for smaller search ranges, to avoid branch mispredictions. #}
-{# 1 = explicit SIMD, 2 = auto-vectorized, 3 = naive linear search #}
-{% set use_linear = 2 %}
-{% if use_linear == 1 %}
+{# Configure the search algorithm used to find matching hashes in arrays. #}
+{# 0 = binary search, 1 = explicit SIMD, 2 = auto-vectorized, 3 = naive linear search #}
+{% if search_type == 0 %}
+GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, uint64_t target) {
+    /* Binary search for matching hash */
+    int32_t low = 0;
+    int32_t high = (int32_t)size - 1;
+
+    while (low <= high) {
+        int32_t mid = low + (high - low) / 2;
+
+        if (arr[mid] == target) {
+            return true;
+        } else if (arr[mid] < target) {
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    return false;
+}
+
+GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
+{
+    uint64_t a = *(const uint64_t *)pA;
+    uint64_t b = *(const uint64_t *)pB;
+    if (a > b)      return 1;
+    else if (a < b) return -1;
+    else            return 0;
+}
+
+{% endif %}
+{% if search_type == 1 %}
 static bool glad_hash_search_linear_slow(const uint64_t *arr, uint32_t size, uint64_t target) {
     uint32_t i;
     #pragma nounroll
@@ -59,7 +88,7 @@ GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, 
 }
 
 {% endif %}
-{% if use_linear == 2 %}
+{% if search_type == 2 %}
 GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, uint64_t target) {
     /* This linear search works well with auto-vectorization, but it will scan
      * the entire array and not stop early on a match */
@@ -73,7 +102,7 @@ GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, 
 }
 
 {% endif %}
-{% if use_linear == 3 %}
+{% if search_type == 3 %}
 GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, uint64_t target) {
     /* This is a very straightforward linear search. It does not auto-vectorize,
      * but it is very compact. */

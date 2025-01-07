@@ -6,28 +6,28 @@
 
 
 static uint64_t DEVICE_COMMANDS[] = {
-{% for command in device_commands %}
+{% for command in device_commands | sort(attribute=hash_sort_key) %}
     {{ command.hash }}, /* {{ command.name }} */
 {% endfor %}
 };
 
-static int glad_vulkan_is_device_command(const char *name) {
+static int glad_vulkan_is_device_command(uint64_t nameHash) {
     /* Exists as a workaround for:
      * https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues/2323
      *
      * `vkGetDeviceProcAddr` does not return NULL for non-device functions.
      */
-    return glad_hash_search(DEVICE_COMMANDS, GLAD_ARRAYSIZE(DEVICE_COMMANDS), glad_hash_string(name, strlen(name)));
+    return glad_hash_search(DEVICE_COMMANDS, GLAD_ARRAYSIZE(DEVICE_COMMANDS), nameHash);
 }
 
 static uint64_t GLOBAL_COMMANDS[] = {
-{% for command in global_commands %}
+{% for command in global_commands | sort(attribute=hash_sort_key) %}
     {{ command.hash }}, /* {{ command.name }} */
 {% endfor %}
 };
 
-static int glad_vulkan_is_global_command(const char *name) {
-    return glad_hash_search(GLOBAL_COMMANDS, GLAD_ARRAYSIZE(GLOBAL_COMMANDS), glad_hash_string(name, strlen(name)));
+static int glad_vulkan_is_global_command(uint64_t nameHash) {
+    return glad_hash_search(GLOBAL_COMMANDS, GLAD_ARRAYSIZE(GLOBAL_COMMANDS), nameHash);
 }
 
 struct _glad_vulkan_userptr {
@@ -40,12 +40,13 @@ struct _glad_vulkan_userptr {
 
 static GLADapiproc glad_vulkan_get_proc(void *vuserptr, const char *name) {
     struct _glad_vulkan_userptr userptr = *(struct _glad_vulkan_userptr*) vuserptr;
+    uint64_t nameHash = glad_hash_string(name, strlen(name));
     PFN_vkVoidFunction result = NULL;
 
-    if (userptr.vk_device != NULL && glad_vulkan_is_device_command(name)) {
+    if (userptr.vk_device != NULL && glad_vulkan_is_device_command(nameHash)) {
         result = userptr.get_device_proc_addr(userptr.vk_device, name);
     } else {
-        bool is_global_command = glad_vulkan_is_global_command(name);
+        bool is_global_command = glad_vulkan_is_global_command(nameHash);
         if (is_global_command) {
             result = userptr.get_instance_proc_addr(NULL, name);
         } else if (userptr.vk_instance != NULL) {

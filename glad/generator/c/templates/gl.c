@@ -67,6 +67,10 @@ static int glad_gl_get_extensions({{ template_utils.context_arg(', ') }}uint64_t
         }
     }
 
+{% if search_type == 0 %}
+    qsort(exts, num_exts, sizeof(uint64_t), compare_uint64);
+
+{% endif %}
     *out_num_exts = num_exts;
     *out_exts = exts;
 
