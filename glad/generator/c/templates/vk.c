@@ -72,6 +72,10 @@ static int glad_vk_get_extensions({{ template_utils.context_arg(',') }} VkPhysic
         }
     }
 
+{% if search_type == 0 %}
+    qsort(extensions, total_extension_count, sizeof(uint64_t), compare_uint64);
+
+{% endif %}
     free((void*) ext_properties);
 
     *out_extension_count = total_extension_count;
@@ -89,7 +93,7 @@ static void glad_vk_free_extensions(uint64_t *extensions) {
     free((void*) extensions);
 }
 
-static int glad_vk_has_extension(uint64_t name, uint32_t extension_count, uint64_t *extensions) {
+static int glad_vk_has_extension(uint64_t *extensions, uint64_t extension_count, uint64_t name) {
     return glad_hash_search(extensions, extension_count, name);
 }
 
@@ -118,10 +122,10 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
 {# If the list is a consecutive 0 to N list, we can just scan the whole thing without emitting an array. #}
 {% if feature_set.extensions|index_consecutive_0_to_N %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_hashes); ++i)
-        context->extArray[i] = glad_vk_has_extension(GLAD_{{ feature_set.name|api }}_ext_hashes[i], extension_count, extensions);
+        context->extArray[i] = glad_vk_has_extension(extensions, extension_count, GLAD_{{ feature_set.name|api }}_ext_hashes[i]);
 {% else %}
     for (i = 0; i < GLAD_ARRAYSIZE(extIdx); ++i)
-        context->extArray[extIdx[i]] = glad_vk_has_extension(GLAD_{{ feature_set.name|api }}_ext_hashes[extIdx[i]], extension_count, extensions);
+        context->extArray[extIdx[i]] = glad_vk_has_extension(extensions, extension_count, GLAD_{{ feature_set.name|api }}_ext_hashes[extIdx[i]]);
 {% endif %}
 
     {# Special case: only one extension which is protected -> unused at compile time only on some platforms #}
