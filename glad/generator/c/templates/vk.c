@@ -76,6 +76,11 @@ static int glad_vk_get_extensions({{ template_utils.context_arg(',') }} VkPhysic
     qsort(extensions, total_extension_count, sizeof(uint64_t), compare_uint64);
 
 {% endif %}
+    if (instance_extension_count)
+        {{ 'glad_found_instance_exts'|ctx }} = 1;
+    if (device_extension_count)
+        {{ 'glad_found_device_exts'|ctx }} = 1;
+
     free((void*) ext_properties);
 
     *out_extension_count = total_extension_count;
@@ -114,6 +119,12 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     uint32_t extension_count = 0;
     uint32_t i;
     uint64_t *extensions = NULL;
+
+    if (physical_device && {{ 'glad_found_device_exts'|ctx }})
+        return 1;
+    if (!physical_device && {{ 'glad_found_instance_exts'|ctx }})
+        return 1;
+
     if (!glad_vk_get_extensions({{'context, ' if options.mx }}physical_device, &extension_count, &extensions)) return 0;
 
     #ifdef __clang__
@@ -150,24 +161,27 @@ static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') 
     int minor = 0;
 
 #ifdef VK_VERSION_1_1
-    if ({{ 'vkEnumerateInstanceVersion'|ctx }} != NULL) {
-        uint32_t version;
+    if (!{{ 'glad_vk_instance_version'|ctx }} && {{ 'vkEnumerateInstanceVersion'|ctx }} != NULL) {
         VkResult result;
 
-        result = {{ 'vkEnumerateInstanceVersion'|ctx }}(&version);
-        if (result == VK_SUCCESS) {
-            major = (int) VK_VERSION_MAJOR(version);
-            minor = (int) VK_VERSION_MINOR(version);
-        }
+        result = {{ 'vkEnumerateInstanceVersion'|ctx }}(&{{ 'glad_vk_instance_version'|ctx }});
+        if (result != VK_SUCCESS)
+            {{ 'glad_vk_instance_version'|ctx }} = 0;
     }
+    major = (int) VK_VERSION_MAJOR({{ 'glad_vk_instance_version'|ctx }});
+    minor = (int) VK_VERSION_MINOR({{ 'glad_vk_instance_version'|ctx }});
 #endif
 
-    if (physical_device != NULL && {{ 'vkGetPhysicalDeviceProperties'|ctx }} != NULL) {
-        VkPhysicalDeviceProperties properties;
-        {{ 'vkGetPhysicalDeviceProperties'|ctx }}(physical_device, &properties);
-
-        major = (int) VK_VERSION_MAJOR(properties.apiVersion);
-        minor = (int) VK_VERSION_MINOR(properties.apiVersion);
+    if (!{{ 'glad_vk_device_version'|ctx }}) {
+        if (physical_device != NULL && {{ 'vkGetPhysicalDeviceProperties'|ctx }} != NULL) {
+            VkPhysicalDeviceProperties properties;
+            {{ 'vkGetPhysicalDeviceProperties'|ctx }}(physical_device, &properties);
+            {{ 'glad_vk_device_version'|ctx }} = properties.apiVersion;
+        }
+    }
+    if ({{'glad_vk_device_version'|ctx}}) {
+        major = (int) VK_VERSION_MAJOR({{ 'glad_vk_device_version'|ctx }});
+        minor = (int) VK_VERSION_MINOR({{ 'glad_vk_device_version'|ctx }});
     }
 
 {% for feature in feature_set.features %}
