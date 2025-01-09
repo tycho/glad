@@ -28,8 +28,10 @@
 {% endblock %}
 {% include 'impl_util.c' %}
 {% block hashsearch %}
+{% if not options.no_extension_detection %}
 
 {% include 'hash_search.c' %}
+{% endif %}
 {% endblock %}
 {% endblock %}
 
@@ -37,12 +39,21 @@
 extern "C" {
 #endif
 
+{% set global_context = 'glad_' + feature_set.name + '_context' -%}
+{% block variables %}
+{% if options.mx_global %}
+{% call template_utils.zero_initialized() %}Glad{{ feature_set.name|api }}Context {{ global_context }}{% endcall %}
+{% endif %}
+{% endblock %}
+
+{%block funcnames %}
 static const char *GLAD_{{ feature_set.name|api }}_fn_names[] = {
 {% for command in feature_set.commands %}
     /* {{ "{:>4}".format(command.index)}} */ "{{ command.name }}"{% if not loop.last %},{% endif %}{{""}}
 {% endfor %}
 };
 
+{% endblock %}
 {%block extnames %}
 static const char *GLAD_{{ feature_set.name|api }}_ext_names[] = {
 {% for extension in feature_set.extensions %}
@@ -50,6 +61,8 @@ static const char *GLAD_{{ feature_set.name|api }}_ext_names[] = {
 {% endfor %}
 };
 
+{% endblock %}
+{% block commandidx %}
 {% endblock %}
 {% block exthashes %}
 {% if not options.no_extension_detection %}
@@ -59,12 +72,6 @@ static uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
 {% endfor %}
 };
 
-{% endif %}
-{% endblock %}
-{% set global_context = 'glad_' + feature_set.name + '_context' -%}
-{% block variables %}
-{% if options.mx_global %}
-{% call template_utils.zero_initialized() %}Glad{{ feature_set.name|api }}Context {{ global_context }}{% endcall %}
 {% endif %}
 {% endblock %}
 {% block extensions %}
@@ -89,6 +96,7 @@ int GLAD_{{ extension.name }} = 0;
 {% endif %}
 
 {% block extension_loaders %}
+{% if not options.no_extension_detection %}
 {% for extension, commands in loadable() %}
 {% call template_utils.protect(extension) %}
 static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(',') }} GLADuserptrloadfunc load, void* userptr) {
@@ -112,6 +120,7 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 
 {% endcall %}
 {% endfor %}
+{% endif %}
 {% endblock %}
 {% block aliasing %}
 {% if options.alias %}
