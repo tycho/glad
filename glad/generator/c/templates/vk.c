@@ -1,8 +1,29 @@
 {% extends 'base_template.c' %}
 
+{% block commandidx %}
+{%if options.no_extension_detection %}
+static uint16_t glad_vk_global_commands[] = {
+{% for command in global_commands | sort(attribute='index') %}
+    {{ "{:4}".format(command.index) }}{% if not loop.last %},{% else %}{{" "}}{% endif %} /* {{ command.name }} */
+{% endfor %}
+};
+
+static uint16_t glad_vk_instance_commands[] = {
+{% for command in instance_commands | sort(attribute='index') %}
+    {{ "{:4}".format(command.index) }}{% if not loop.last %},{% else %}{{" "}}{% endif %} /* {{ command.name }} */
+{% endfor %}
+};
+
+static uint16_t glad_vk_device_commands[] = {
+{% for command in device_commands | sort(attribute='index') %}
+    {{ "{:4}".format(command.index) }}{% if not loop.last %},{% else %}{{" "}}{% endif %} /* {{ command.name }} */
+{% endfor %}
+};
+
+{% endif %}
+{% endblock %}
 {% block extnames %}
 {% endblock %}
-
 {% block loader %}
 {% if not options.no_extension_detection %}
 static int glad_vk_get_extensions({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, uint32_t *out_extension_count, uint64_t **out_extensions) {
@@ -159,7 +180,6 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     return 1;
 }
 
-{% endif %}
 static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
     int major = 1;
     int minor = 0;
@@ -195,30 +215,79 @@ static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') 
     return GLAD_MAKE_VERSION(major, minor);
 }
 
-GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, GLADuserptrloadfunc load, void *userptr) {
+{% endif %}
+GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADuserptrloadfunc load, void *userptr) {
     int version;
+{% if options.no_extension_detection %}
+    uint32_t i;
+
+    (void)physical_device;
+
+    version = 1;
+
+#ifdef VK_VERSION_1_0
+    {{ 'vkGetInstanceProcAddr'|ctx }} = (PFN_vkGetInstanceProcAddr)load(userptr, "vkGetInstanceProcAddr");
+    {{ 'vkGetDeviceProcAddr'|ctx }} = (PFN_vkGetDeviceProcAddr)load(userptr, "vkGetDeviceProcAddr");
+#endif
+
+    if ({{ 'vkGetInstanceProcAddr'|ctx }}) {
+        #ifdef __clang__
+        #pragma nounroll
+        #endif
+        for (i = 0; i < GLAD_ARRAYSIZE(glad_vk_global_commands); ++i) {
+            const uint16_t pfnIdx = glad_vk_global_commands[i];
+            context->pfnArray[pfnIdx] = {{ 'vkGetInstanceProcAddr'|ctx }}(NULL, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+        }
+    }
+{% else %}
+
+    (void)instance;
+    (void)device;
 
 #ifdef VK_VERSION_1_1
-    {{ 'vkEnumerateInstanceVersion '|ctx }} = (PFN_vkEnumerateInstanceVersion) load(userptr, "vkEnumerateInstanceVersion");
+    {{ 'vkEnumerateInstanceVersion'|ctx }} = (PFN_vkEnumerateInstanceVersion)load(userptr, "vkEnumerateInstanceVersion");
 #endif
+
     version = glad_vk_find_core_{{ api|lower }}({{ 'context,' if options.mx }} physical_device);
     if (!version) {
         return 0;
     }
+{% endif %}
 
+{% if options.no_extension_detection %}
+    if (instance != NULL && {{ 'vkGetInstanceProcAddr'|ctx }} != NULL) {
+        #ifdef __clang__
+        #pragma nounroll
+        #endif
+        for (i = 0; i < GLAD_ARRAYSIZE(glad_vk_instance_commands); ++i) {
+            const uint16_t pfnIdx = glad_vk_instance_commands[i];
+            context->pfnArray[pfnIdx] = {{ 'vkGetInstanceProcAddr'|ctx }}(instance, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+        }
+    }
+
+    if (device != NULL && {{ 'vkGetDeviceProcAddr'|ctx }} != NULL) {
+        #ifdef __clang__
+        #pragma nounroll
+        #endif
+        for (i = 0; i < GLAD_ARRAYSIZE(glad_vk_device_commands); ++i) {
+            const uint16_t pfnIdx = glad_vk_device_commands[i];
+            context->pfnArray[pfnIdx] = {{ 'vkGetDeviceProcAddr'|ctx }}(device, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+        }
+    }
+
+{% else %}
 {% for feature, _ in loadable(feature_set.features) %}
     glad_vk_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
 
-{% if not options.no_extension_detection %}
     if (!glad_vk_find_extensions_{{ api|lower }}({{ 'context,' if options.mx }} physical_device)) return 0;
-{% endif %}
 {% for extension, _ in loadable(feature_set.extensions) %}
 {% call template_utils.protect(extension) %}
     glad_vk_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
 {% endcall %}
 {% endfor %}
 
+{% endif %}
 {% if options.mx_global %}
     gladSet{{ api|api }}Context(context);
 {% endif %}
@@ -231,18 +300,18 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 }
 
 {% if options.mx_global %}
-int gladLoad{{ api|api }}UserPtr(VkPhysicalDevice physical_device, GLADuserptrloadfunc load, void *userptr) {
-    return gladLoad{{ api|api }}ContextUserPtr(gladGet{{ api|api }}Context(), physical_device, load, userptr);
+int gladLoad{{ api|api }}UserPtr(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADuserptrloadfunc load, void *userptr) {
+    return gladLoad{{ api|api }}ContextUserPtr(gladGet{{ api|api }}Context(), instance, physical_device, device, load, userptr);
 }
 {% endif %}
 
-int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, GLADloadfunc load) {
-    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context,' if options.mx }} physical_device, glad_vk_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
+int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADloadfunc load) {
+    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context, ' if options.mx }}instance, physical_device, device, glad_vk_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
 
 {% if options.mx_global %}
-int gladLoad{{ api|api }}(VkPhysicalDevice physical_device, GLADloadfunc load) {
-    return gladLoad{{ api|api }}Context(gladGet{{ api|api }}Context(), physical_device, load);
+int gladLoad{{ api|api }}(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADloadfunc load) {
+    return gladLoad{{ api|api }}Context(gladGet{{ api|api }}Context(), instance, physical_device, device, load);
 }
 {% endif %}
 {% endfor %}

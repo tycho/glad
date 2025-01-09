@@ -40,6 +40,10 @@ def is_global_command(self):
     return self.name in dlsym_commands
 
 
+def is_instance_command(self):
+    return not is_global_command(self) and not is_device_command(self)
+
+
 def strip_specification_prefix(name, spec_name=None):
     """
     Used to strip the specification name prefix from a

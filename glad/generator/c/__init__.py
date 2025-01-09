@@ -12,6 +12,7 @@ from glad.generator import JinjaGenerator
 from glad.generator.util import (
     is_device_command,
     is_global_command,
+    is_instance_command,
     strip_specification_prefix,
     collect_alias_information,
     find_extensions_with_aliases,
@@ -383,6 +384,7 @@ class CGenerator(JinjaGenerator):
             # required for vulkan loader:
             device_commands=list(filter(is_device_command, feature_set.commands)),
             global_commands=list(filter(is_global_command, feature_set.commands)),
+            instance_commands=list(filter(is_instance_command, feature_set.commands)),
             search_type=search_type,
             hash_sort_key=hash_sort_key,
         )
