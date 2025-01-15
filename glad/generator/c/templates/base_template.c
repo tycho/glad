@@ -71,7 +71,6 @@ static uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
     /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
 {% endfor %}
 };
-
 {% endif %}
 {% endblock %}
 {% block extensions %}
@@ -85,8 +84,8 @@ int GLAD_{{ extension.name }} = 0;
 {% endif %}
 {% endblock %}
 {% if not options.mx %}
-
 {% block commands %}
+
 {% for command in feature_set.commands|c_commands %}
 {% call template_utils.protect(command) %}
 {{ command.name|pfn }} glad_{{ command.name }} = NULL;
@@ -97,25 +96,31 @@ int GLAD_{{ extension.name }} = 0;
 
 {% block extension_loaders %}
 {% if not options.no_extension_detection %}
+static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, const uint16_t *pPfnIdx, uint32_t numPfns)
+{
+    uint32_t i;
+
+    #ifdef __clang__
+    #pragma nounroll
+    #endif
+    for (i = 0; i < numPfns; ++i) {
+        const uint16_t pfnIdx = pPfnIdx[i];
+        context->pfnArray[pfnIdx] = load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+    }
+}
+
 {% for extension, commands in loadable() %}
 {% call template_utils.protect(extension) %}
-static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(',') }} GLADuserptrloadfunc load, void* userptr) {
+static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr) {
     static const uint16_t s_pfnIdx[] = {
 {% for command in commands %}
         {{ "{:>4}".format(command.index) }}{% if not loop.last %},{% else %} {% endif %} /* {{ command.name }} */
 {% endfor %}
     };
-    uint32_t i;
 {% if not options.no_extension_detection %}
-    if(!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
+    if (!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
 {% endif %}
-    #ifdef __clang__
-    #pragma nounroll
-    #endif
-    for (i = 0; i < GLAD_ARRAYSIZE(s_pfnIdx); ++i) {
-        const uint16_t pfnIdx = s_pfnIdx[i];
-        context->pfnArray[pfnIdx] = load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
-    }
+    glad_{{ spec.name }}_load_pfns({{'context, ' if options.mx }}load, userptr, s_pfnIdx, GLAD_ARRAYSIZE(s_pfnIdx));
 }
 
 {% endcall %}
