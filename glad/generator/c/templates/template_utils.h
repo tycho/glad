@@ -22,7 +22,6 @@
 {% endif %}
 {{ caller() }}
 {%- if protections %}
-
 #endif
 {% endif %}
 {% endmacro %}
@@ -57,7 +56,9 @@ GLAD_API_CALL int GLAD_{{ extension.name }};
 {% macro write_types(types) %}
 {# we assume the types are sorted correctly #}
 {% for type in types %}
+{% if type.category or type._raw %}
 {{ write_type(type) }}
+{% endif %}
 {% endfor %}
 {% endmacro %}
 
@@ -83,7 +84,7 @@ typedef enum {{ type.name }} {
 {% endfor %}
     {{ '{}_MAX_ENUM{}'.format(*type.expanded_name) }} = 0x7FFFFFFF
 } {{ type.name }};
-{%- endif -%}
+{% endif -%}
 {% endif -%}
 {% elif type.category in ('struct', 'union') -%}
 typedef {{ type.category }} {% if type.alias %}{{ type.alias }}{% else %}{{ type.name }}{% endif %} {% if type.members %}{
@@ -94,10 +95,10 @@ typedef {{ type.category }} {% if type.alias %}{{ type.alias }}{% else %}{{ type
 {% elif type.alias %}
 #define {{ type.name }} {{ type.alias }}
 {%- elif type._raw|trim -%}
-{{ type._raw|trim|replace('APIENTRY', 'GLAD_API_PTR') }}
+{{ type._raw|trim|replace('APIENTRY', 'GLAD_API_PTR') }}{{'\n'}}
 {%- elif type.category == 'include' %}
 #include <{{ type.name }}>
-{%- endif -%}
+{% endif -%}
 {% endcall %}
 {% endmacro %}
 
