@@ -57,14 +57,11 @@ extern "C" {
 {% block enums %}
 {{ template_utils.write_enumerations(feature_set.enums) }}
 {% endblock %}
-
 {% block types %}
 {{ template_utils.write_types(feature_set.types) }}
 {% endblock %}
-
 {% block feature_information %}
 {{ template_utils.write_feature_information(chain(feature_set.features, feature_set.extensions), with_runtime=not options.mx) }}
-
 {% endblock %}
 {% block beforecommands %}
 {% endblock %}
@@ -140,7 +137,6 @@ GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_
 GLAD_API_CALL Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context(void);
 GLAD_API_CALL void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Context *context);
 {% endif %}
-
 {% endblock %}
 
 {% block custom_declarations %}
