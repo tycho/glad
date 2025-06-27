@@ -311,6 +311,24 @@ class CGenerator(JinjaGenerator):
             'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_av1std_encode.h',
             requires=['vk_video/vulkan_video_codecs_common.h']
         ),
+        Header(
+            'vk_video/vulkan_video_codec_vp9std.h',
+            'vk_video/vulkan_video_codec_vp9std.h',
+            'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_vp9std.h',
+            requires=['vk_video/vulkan_video_codecs_common.h']
+        ),
+        Header(
+            'vk_video/vulkan_video_codec_vp9std_decode.h',
+            'vk_video/vulkan_video_codec_vp9std_decode.h',
+            'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_vp9std_decode.h',
+            requires=['vk_video/vulkan_video_codecs_common.h']
+        ),
+        #Header(
+        #    'vk_video/vulkan_video_codec_vp9std_encode.h',
+        #    'vk_video/vulkan_video_codec_vp9std_encode.h',
+        #    'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/main/include/vk_video/vulkan_video_codec_vp9std_encode.h',
+        #    requires=['vk_video/vulkan_video_codecs_common.h']
+        #),
     ]
 
     def __init__(self, *args, **kwargs):
