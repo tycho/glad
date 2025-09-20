@@ -181,8 +181,10 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
 }
 
 static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
+    const uint32_t API_VARIANT_MASK = 0xe0000000;
     int major = 1;
     int minor = 0;
+    uint16_t version_value;
 
 #ifdef VK_VERSION_1_1
     if (!{{ 'glad_vk_instance_version'|ctx }} && {{ 'vkEnumerateInstanceVersion'|ctx }} != NULL) {
@@ -191,6 +193,7 @@ static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') 
         result = {{ 'vkEnumerateInstanceVersion'|ctx }}(&{{ 'glad_vk_instance_version'|ctx }});
         if (result != VK_SUCCESS)
             {{ 'glad_vk_instance_version'|ctx }} = 0;
+        {{ 'glad_vk_instance_version'|ctx }} &= ~API_VARIANT_MASK;
     }
     major = (int) VK_VERSION_MAJOR({{ 'glad_vk_instance_version'|ctx }});
     minor = (int) VK_VERSION_MINOR({{ 'glad_vk_instance_version'|ctx }});
@@ -201,6 +204,7 @@ static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') 
             VkPhysicalDeviceProperties properties;
             {{ 'vkGetPhysicalDeviceProperties'|ctx }}(physical_device, &properties);
             {{ 'glad_vk_device_version'|ctx }} = properties.apiVersion;
+            {{ 'glad_vk_device_version'|ctx }} &= ~API_VARIANT_MASK;
         }
     }
     if ({{'glad_vk_device_version'|ctx}}) {
@@ -208,8 +212,10 @@ static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') 
         minor = (int) VK_VERSION_MINOR({{ 'glad_vk_device_version'|ctx }});
     }
 
+    version_value = (major << 8U) | minor;
+
 {% for feature in feature_set.features %}
-    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = (major == {{ feature.version.major }} && minor >= {{ feature.version.minor }}) || major > {{ feature.version.major }};
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = version_value >= 0x{{ '%02x%02x'|format(feature.version.major, feature.version.minor) }};
 {% endfor %}
 
     return GLAD_MAKE_VERSION(major, minor);

@@ -115,6 +115,7 @@ static int glad_egl_find_extensions_{{ api|lower }}({{ template_utils.context_ar
 
 static int glad_egl_find_core_{{ api|lower }}({{ template_utils.context_arg(', ') }}EGLDisplay display) {
     int major, minor;
+    unsigned short version_value;
     const char *version;
 
     if (display == NULL) {
@@ -131,8 +132,10 @@ static int glad_egl_find_core_{{ api|lower }}({{ template_utils.context_arg(', '
         GLAD_IMPL_UTIL_SSCANF(version, "%d.%d", &major, &minor);
     }
 
+    version_value = (major << 8U) | minor;
+
 {% for feature in feature_set.features %}
-    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = (major == {{ feature.version.major }} && minor >= {{ feature.version.minor }}) || major > {{ feature.version.major }};
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = version_value >= 0x{{ '%02x%02x'|format(feature.version.major, feature.version.minor) }};
 {% endfor %}
 
     return GLAD_MAKE_VERSION(major, minor);

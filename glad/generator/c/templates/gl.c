@@ -142,6 +142,7 @@ static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='
     };
     int major = 0;
     int minor = 0;
+    unsigned short version_value;
     version = (const char*) {{ 'glGetString'|ctx }}(GL_VERSION);
     if (!version) return 0;
     for (i = 0;  prefixes[i];  i++) {
@@ -154,8 +155,10 @@ static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='
 
     GLAD_IMPL_UTIL_SSCANF(version, "%d.%d", &major, &minor);
 
+    version_value = (major << 8U) | minor;
+
 {% for feature in feature_set.features|select('supports', api) %}
-    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = (major == {{ feature.version.major }} && minor >= {{ feature.version.minor }}) || major > {{ feature.version.major }};
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = version_value >= 0x{{ '%02x%02x'|format(feature.version.major, feature.version.minor) }};
 {% endfor %}
 
     return GLAD_MAKE_VERSION(major, minor);

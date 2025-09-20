@@ -90,6 +90,7 @@ static int glad_glx_find_extensions({{ template_utils.context_arg(', ') }}Displa
 
 static int glad_glx_find_core_{{ api|lower }}({{ template_utils.context_arg(', ') }}Display **display, int *screen) {
     int major = 0, minor = 0;
+    unsigned short version_value;
     if(*display == NULL) {
 #ifdef GLAD_GLX_NO_X11
         GLAD_UNUSED(screen);
@@ -103,8 +104,9 @@ static int glad_glx_find_core_{{ api|lower }}({{ template_utils.context_arg(', '
 #endif
     }
     {{'GLAD_glXQueryVersion'|ctx}}(*display, &major, &minor);
+    version_value = (major << 8U) | minor;
 {% for feature in feature_set.features %}
-    {{ ('GLAD_' + feature.name)|ctx }} = (major == {{ feature.version.major }} && minor >= {{ feature.version.minor }}) || major > {{ feature.version.major }};
+    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = version_value >= 0x{{ '%02x%02x'|format(feature.version.major, feature.version.minor) }};
 {% endfor %}
     return GLAD_MAKE_VERSION(major, minor);
 }
