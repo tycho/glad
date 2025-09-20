@@ -78,9 +78,14 @@ extern "C" {
 typedef struct Glad{{ feature_set.name|api }}Context {
     void* userptr;
 
+    union {
+        unsigned char featArray[{{feature_set.features|length}}];
+        struct {
 {% for extension in feature_set.features %}
-    unsigned char {{ extension.name|ctx(member=True) }};
+        /* {{ "{:>4}".format(extension.index)}} */ unsigned char {{ extension.name|ctx(member=True) }};
 {% endfor %}
+        };
+    };
 
 {% if not options.no_extension_detection %}
     union {

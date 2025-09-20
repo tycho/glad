@@ -224,8 +224,10 @@ static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') 
 {% endif %}
 GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADuserptrloadfunc load, void *userptr) {
     int version;
-{% if options.no_extension_detection %}
+{% if options.use_pfn_ranges or options.no_extension_detection %}
     uint32_t i;
+{% endif %}
+{% if options.no_extension_detection %}
 
     (void)physical_device;
 
@@ -282,16 +284,35 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
     }
 
 {% else %}
+{% if options.use_pfn_ranges %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_feature_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[i];
+        if (context->featArray[range->extension]) {
+            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+        }
+    }
+{% else %}
 {% for feature, _ in loadable(feature_set.features) %}
     glad_vk_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
+{% endif %}
 
     if (!glad_vk_find_extensions_{{ api|lower }}({{ 'context,' if options.mx }} physical_device)) return 0;
+
+{% if options.use_pfn_ranges %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[i];
+        if (context->extArray[range->extension]) {
+            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+        }
+    }
+{% else %}
 {% for extension, _ in loadable(feature_set.extensions) %}
 {% call template_utils.protect(extension) %}
     glad_vk_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
 {% endcall %}
 {% endfor %}
+{% endif %}
 
 {% endif %}
 {% if options.mx_global %}

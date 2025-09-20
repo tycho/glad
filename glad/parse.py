@@ -93,6 +93,11 @@ class FeatureSet(object):
             index += 1
 
         index = 0
+        for feature in features:
+            feature.index = index
+            index += 1
+
+        index = 0
         for extension in extensions:
             extension.index = index
             extension.hash = '0x' + xxh3_64_hexdigest(extension.name)
@@ -430,6 +435,28 @@ class Specification(object):
             return dependencies
 
         return OrderedDict(topological_sort(types.items(), lambda x: x[0], _type_dependencies))
+
+    @property
+    @memoize(method=True)
+    def command_index(self):
+        commands = dict()
+
+        for feature in self.root.findall('.//feature'):
+            for require in feature.findall('require'):
+                for command in require.findall('command'):
+                    command_name = command.get('name')
+                    if command_name is not None and command_name not in commands:
+                        commands[command_name] = len(commands)
+
+        for extensions in self.root.findall('.//extensions'):
+            for extension in extensions.findall('extension'):
+                for require in extension.findall('require'):
+                    for command in require.findall('command'):
+                        command_name = command.get('name')
+                        if command_name is not None and command_name not in commands:
+                            commands[command_name] = len(commands)
+
+        return commands
 
     @property
     def commands(self):
@@ -811,7 +838,7 @@ class Specification(object):
         features = sorted(features, key=lambda x: x.name)
         extensions = sorted(extensions, key=lambda x: x.name)
         enums = sorted(enums, key=lambda x: x.name)
-        commands = sorted(commands, key=lambda x: x.name)
+        commands = sorted(commands, key=lambda x: self.command_index[x.name])
 
         return FeatureSet(api, FeatureSetInfo.one(api, version, profile),
                           features, extensions, types, enums, commands)
@@ -1444,13 +1471,13 @@ class Extension(IdentifiedByName):
             return TypeEnumCommand(
                 sorted(types, key=lambda x: x.name),
                 sorted(enums, key=lambda x: x.name),
-                sorted(commands, key=lambda x: x.name),
+                sorted(commands, key=lambda x: spec.command_index[x.name]),
             )
 
         return TypeEnumCommand(
             sorted(types.intersection(feature_set.types), key=lambda x: x.name),
             sorted(enums.intersection(feature_set.enums), key=lambda x: x.name),
-            sorted(commands.intersection(feature_set.commands), key=lambda x: x.name),
+            sorted(commands.intersection(feature_set.commands), key=lambda x: spec.command_index[x.name]),
         )
 
     def __str__(self):

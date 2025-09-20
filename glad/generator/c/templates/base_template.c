@@ -64,6 +64,32 @@ static const char *GLAD_{{ feature_set.name|api }}_ext_names[] = {
 };
 
 {% endblock %}
+{%block extranges %}
+{% if options.use_pfn_ranges %}
+static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[] = {
+{% for extension, command_ranges in feature_ranges() %}
+{% call template_utils.protect(extension) %}
+    /* {{ extension.name }} */
+{% for cmd_range in command_ranges %}
+    { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} },
+{% endfor %}{% if not loop.last %}{{"\n"}}{% endif %}
+{% endcall %}
+{% endfor %}
+};
+
+static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
+{% for extension, command_ranges in extension_ranges() %}
+{% call template_utils.protect(extension) %}
+    /* {{ extension.name }} */
+{% for cmd_range in command_ranges %}
+    { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} },
+{% endfor %}{% if not loop.last %}{{"\n"}}{% endif %}
+{% endcall %}
+{% endfor %}
+};
+
+{% endif %}
+{% endblock %}
 {% block commandidx %}
 {% endblock %}
 {% block exthashes %}
@@ -96,8 +122,24 @@ int GLAD_{{ extension.name }} = 0;
 {% endblock %}
 {% endif %}
 
+{% block range_loader %}
+{% if options.use_pfn_ranges %}
+static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
+{
+    uint32_t pfnIdx;
+
+    #ifdef __clang__
+    #pragma nounroll
+    #endif
+    for (pfnIdx = pfnStart; pfnIdx < pfnStart + numPfns; ++pfnIdx) {
+        context->pfnArray[pfnIdx] = load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+    }
+}
+
+{% endif %}
+{% endblock %}
 {% block extension_loaders %}
-{% if not options.no_extension_detection %}
+{% if not options.no_extension_detection and not options.use_pfn_ranges %}
 static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, const uint16_t *pPfnIdx, uint32_t numPfns)
 {
     uint32_t i;
@@ -115,7 +157,7 @@ static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }
 {% call template_utils.protect(extension) %}
 static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr) {
     static const uint16_t s_pfnIdx[] = {
-{% for command in commands %}
+{% for command in commands|sort(attribute='index') %}
         {{ "{:>4}".format(command.index) }}{% if not loop.last %},{% else %} {% endif %} /* {{ command.name }} */
 {% endfor %}
     };

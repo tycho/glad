@@ -8,7 +8,6 @@
 {% endblock %}
 {% block exthashes %}
 {% endblock %}
-
 {% block loader %}
 static int glad_wgl_has_extension(const char *extensions, const char *ext) {
     const char *terminator;
@@ -84,19 +83,42 @@ static int glad_wgl_find_core_{{ api|lower }}({{ template_utils.context_arg(def=
 
 GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}HDC hdc, GLADuserptrloadfunc load, void *userptr) {
     int version;
+{% if options.use_pfn_ranges %}
+    uint32_t i;
+{% endif %}
+
     {{ 'GLAD_wglGetExtensionsStringARB'|ctx }} = (PFNWGLGETEXTENSIONSSTRINGARBPROC) load(userptr, "wglGetExtensionsStringARB");
     {{ 'GLAD_wglGetExtensionsStringEXT'|ctx }} = (PFNWGLGETEXTENSIONSSTRINGEXTPROC) load(userptr, "wglGetExtensionsStringEXT");
     if({{ 'GLAD_wglGetExtensionsStringARB'|ctx }} == NULL && {{ 'GLAD_wglGetExtensionsStringEXT'|ctx }} == NULL) return 0;
     version = glad_wgl_find_core_{{ api|lower }}({{'context' if options.mx }});
 
+{% if options.use_pfn_ranges %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_feature_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[i];
+        if (context->featArray[range->extension]) {
+            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+        }
+    }
+{% else %}
 {% for feature, _ in loadable(feature_set.features, api=api) %}
     glad_wgl_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
+{% endif %}
 
     if (!glad_wgl_find_extensions_{{ api|lower }}({{'context, ' if options.mx }}hdc)) return 0;
+
+{% if options.use_pfn_ranges %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[i];
+        if (context->extArray[range->extension]) {
+            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+        }
+    }
+{% else %}
 {% for extension, _ in loadable(feature_set.extensions, api=api) %}
     glad_wgl_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
+{% endif%}
 
 {% if options.alias %}
     glad_wgl_resolve_aliases({{'context' if options.mx }});

@@ -21,4 +21,10 @@ typedef struct {
     uint16_t second;
 } GladAliasPair_t;
 
+typedef struct {
+    uint16_t extension;
+    uint16_t start;
+    uint16_t count;
+} GladPfnRange_t;
+
 #endif /* GLAD_IMPL_UTIL_C_ */

@@ -67,6 +67,100 @@ def params_to_c(params):
 def param_names(params):
     return ', '.join(param.name for param in params)
 
+class CommandRange:
+    def __init__(self, start, count, commands=None):
+        self.start = start
+        self.count = count
+        self.commands = commands or []  # Keep original commands if needed
+
+    @property
+    def end(self):
+        return self.start + self.count - 1
+
+def find_contiguous_ranges(commands):
+    """Convert a list of commands into contiguous ranges."""
+    if not commands:
+        return []
+
+    # Sort commands by their index
+    sorted_commands = sorted(commands, key=lambda cmd: cmd.index)
+
+    ranges = []
+    current_start = sorted_commands[0].index
+    current_commands = [sorted_commands[0]]
+
+    for i in range(1, len(sorted_commands)):
+        expected_index = sorted_commands[i-1].index + 1
+        actual_index = sorted_commands[i].index
+
+        if actual_index == expected_index:
+            # Contiguous, extend current range
+            current_commands.append(sorted_commands[i])
+        else:
+            # Gap found, finish current range and start new one
+            ranges.append(CommandRange(
+                start=current_start,
+                count=len(current_commands),
+                commands=current_commands
+            ))
+            current_start = actual_index
+            current_commands = [sorted_commands[i]]
+
+    # Add the final range
+    ranges.append(CommandRange(
+        start=current_start,
+        count=len(current_commands),
+        commands=current_commands
+    ))
+
+    return ranges
+
+
+@jinja2_contextfunction
+def feature_ranges(context, api=None):
+    spec = context['spec']
+    feature_set = context['feature_set']
+
+    for extension in feature_set.features:
+        if api is None or extension.supports(api):
+            commands = extension.get_requirements(spec, feature_set=feature_set).commands
+            if commands:
+                ranges = find_contiguous_ranges(commands)
+                yield extension, ranges
+
+
+@jinja2_contextfunction
+def extension_ranges(context, extensions=None, api=None):
+    spec = context['spec']
+    feature_set = context['feature_set']
+
+    for extension in feature_set.extensions:
+        if api is None or extension.supports(api):
+            commands = extension.get_requirements(spec, feature_set=feature_set).commands
+            if commands:
+                ranges = find_contiguous_ranges(commands)
+                yield extension, ranges
+
+
+@jinja2_contextfunction
+def loadable_ranges(context, extensions=None, api=None):
+    spec = context['spec']
+    feature_set = context['feature_set']
+
+    if extensions is None:
+        extensions = (feature_set.features, feature_set.extensions)
+    elif len(extensions) > 0:
+        try:
+            iter(extensions[0])
+        except TypeError:
+            extensions = [extensions]
+
+    for extension in itertools.chain.from_iterable(extensions):
+        if api is None or extension.supports(api):
+            commands = extension.get_requirements(spec, feature_set=feature_set).commands
+            if commands:
+                ranges = find_contiguous_ranges(commands)
+                yield extension, ranges
 
 @jinja2_contextfunction
 def loadable(context, extensions=None, api=None):
@@ -224,6 +318,11 @@ class CConfig(Config):
         default=False,
         description='Disable API extension detection'
     )
+    USE_PFN_RANGES = ConfigOption(
+        converter=bool,
+        default=False,
+        description='Enable use of PFN ranges instead of PFN lists (smaller code size)'
+    )
 
     __constraints__ = [
         RequirementConstraint(['MX_GLOBAL'], 'MX'),
@@ -338,6 +437,9 @@ class CGenerator(JinjaGenerator):
 
         self.environment.globals.update(
             loadable=loadable,
+            loadable_ranges=loadable_ranges,
+            feature_ranges=feature_ranges,
+            extension_ranges=extension_ranges,
             enum_member=enum_member,
             chain=itertools.chain
         )
@@ -384,8 +486,12 @@ class CGenerator(JinjaGenerator):
         args = JinjaGenerator.get_template_arguments(self, spec, feature_set, config)
 
         # Disabling extension detection only makes sense on Vulkan for now
-        if spec.name not in (VK.NAME):
+        if spec.name not in (VK.NAME,):
             args['options']['no_extension_detection'] = False
+
+        # Only GL, EGL, WGL, and Vulkan have use_pfn_ranges right now
+        if spec.name not in (VK.NAME, GL.NAME, EGL.NAME, WGL.NAME):
+            args['options']['use_pfn_ranges'] = False
 
         # Search and sort parameters for string hashes
         # 0 = binary search, 1 = explicit SIMD, 2 = auto-vectorized, 3 = naive linear search

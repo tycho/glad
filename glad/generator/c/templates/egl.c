@@ -143,6 +143,10 @@ static int glad_egl_find_core_{{ api|lower }}({{ template_utils.context_arg(', '
 
 GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}EGLDisplay display, GLADuserptrloadfunc load, void *userptr) {
     int version;
+{% if options.use_pfn_ranges %}
+    uint32_t i;
+{% endif %}
+
     {{ 'eglGetDisplay'|ctx }} = (PFNEGLGETDISPLAYPROC) load(userptr, "eglGetDisplay");
     {{ 'eglGetCurrentDisplay'|ctx }} = (PFNEGLGETCURRENTDISPLAYPROC) load(userptr, "eglGetCurrentDisplay");
     {{ 'eglQueryString'|ctx }} = (PFNEGLQUERYSTRINGPROC) load(userptr, "eglQueryString");
@@ -151,14 +155,34 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 
     version = glad_egl_find_core_{{ api|lower }}({{'context, ' if options.mx }}display);
     if (!version) return 0;
+
+{% if options.use_pfn_ranges %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_feature_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[i];
+        if (context->featArray[range->extension]) {
+            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+        }
+    }
+{% else %}
 {% for feature, _ in loadable(feature_set.features, api=api) %}
     glad_egl_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
+{% endif %}
 
     if (!glad_egl_find_extensions_{{ api|lower }}({{'context, ' if options.mx }}display)) return 0;
+
+{% if options.use_pfn_ranges %}
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[i];
+        if (context->extArray[range->extension]) {
+            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+        }
+    }
+{% else %}
 {% for extension, _ in loadable(feature_set.extensions, api=api) %}
     glad_egl_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
 {% endfor %}
+{% endif%}
 
 {% if options.mx_global %}
     gladSet{{ feature_set.name|api }}Context(context);
