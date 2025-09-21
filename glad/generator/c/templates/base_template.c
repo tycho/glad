@@ -209,7 +209,7 @@ static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.cont
 }
 
 {% endif %}
-static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
+GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
 {%if aliases|length > 0 %}
     static const GladAliasPair_t s_aliases[] = {
 {% for command in feature_set.commands|sort(attribute='name') %}
