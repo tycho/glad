@@ -173,6 +173,42 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 {% endblock %}
 {% block aliasing %}
 {% if options.alias %}
+{% if aliases|length > 0 %}
+static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.context_arg(', ') }}const GladAliasPair_t *pairs, uint32_t start_idx, uint32_t total_count) {
+    void **pfnArray = context->pfnArray;
+    uint16_t canonical_idx = pairs[start_idx].first;
+
+    /* Find the end of this group (consecutive pairs with same canonical index) */
+    uint32_t end_idx = start_idx;
+    while (end_idx < total_count && pairs[end_idx].first == canonical_idx) {
+        end_idx++;
+    }
+
+    /* Pass 1: Find any loaded secondary for this canonical */
+    void *canonical_ptr = pfnArray[canonical_idx];
+    if (canonical_ptr == NULL) {
+        for (uint32_t i = start_idx; i < end_idx; ++i) {
+            if (pfnArray[pairs[i].second] != NULL) {
+                canonical_ptr = pfnArray[pairs[i].second];
+                pfnArray[canonical_idx] = canonical_ptr;
+                break;
+            }
+        }
+    }
+
+    /* Pass 2: Populate unloaded secondaries */
+    if (canonical_ptr != NULL) {
+        for (uint32_t i = start_idx; i < end_idx; ++i) {
+            if (pfnArray[pairs[i].second] == NULL) {
+                pfnArray[pairs[i].second] = canonical_ptr;
+            }
+        }
+    }
+
+    return end_idx - 1;  /* Return index of last processed pair */
+}
+
+{% endif %}
 static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
 {%if aliases|length > 0 %}
     static const GladAliasPair_t s_aliases[] = {
@@ -188,17 +224,13 @@ static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(d
 {% endif %}
 {% endfor %}
     };
-    void **pfnArray = context->pfnArray;
     uint32_t i;
 
     #ifdef __clang__
     #pragma nounroll
     #endif
     for (i = 0; i < GLAD_ARRAYSIZE(s_aliases); ++i) {
-        const GladAliasPair_t *pAlias = &s_aliases[i];
-        if (pfnArray[pAlias->first] == NULL && pfnArray[pAlias->second] != NULL) {
-            pfnArray[pAlias->first] = pfnArray[pAlias->second];
-        }
+        i = glad_{{ spec.name }}_resolve_alias_group({{ 'context, ' if options.mx }}s_aliases, i, GLAD_ARRAYSIZE(s_aliases));
     }
 {% else %}
 {% if options.mx %}

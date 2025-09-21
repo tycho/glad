@@ -113,6 +113,15 @@ def collect_alias_information(commands):
             knownidx.add((name, command_dict[name].index))
         alias[command] = knownidx
 
+    # Only keep one canonical set of aliases
+    seen_idx = set()
+    for command in sorted(commands, key=lambda x: (len(x.name), x.name)):
+        if command.index in seen_idx:
+            del alias[command.name]
+            continue
+        seen_idx.add(command.index)
+        seen_idx |= set(idx for _, idx in alias.get(command.name, []))
+
     return OrderedDict(
         (command.name, sorted(alias[command.name]))
         for command in commands if command.name in alias
