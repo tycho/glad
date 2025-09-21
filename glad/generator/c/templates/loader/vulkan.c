@@ -5,9 +5,14 @@
 {% include 'loader/library.c' %}
 
 {% if not options.no_extension_detection %}
-
-static uint64_t DEVICE_COMMANDS[] = {
+static uint64_t GLAD_{{ feature_set.name|api }}_device_commands[] = {
 {% for command in device_commands | sort(attribute=hash_sort_key) %}
+    {{ command.hash }}, /* {{ command.name }} */
+{% endfor %}
+};
+
+static uint64_t GLAD_{{ feature_set.name|api }}_global_commands[] = {
+{% for command in global_commands | sort(attribute=hash_sort_key) %}
     {{ command.hash }}, /* {{ command.name }} */
 {% endfor %}
 };
@@ -18,17 +23,11 @@ static int glad_vulkan_is_device_command(uint64_t nameHash) {
      *
      * `vkGetDeviceProcAddr` does not return NULL for non-device functions.
      */
-    return glad_hash_search(DEVICE_COMMANDS, GLAD_ARRAYSIZE(DEVICE_COMMANDS), nameHash);
+    return glad_hash_search(GLAD_{{ feature_set.name|api }}_device_commands, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_device_commands), nameHash);
 }
 
-static uint64_t GLOBAL_COMMANDS[] = {
-{% for command in global_commands | sort(attribute=hash_sort_key) %}
-    {{ command.hash }}, /* {{ command.name }} */
-{% endfor %}
-};
-
 static int glad_vulkan_is_global_command(uint64_t nameHash) {
-    return glad_hash_search(GLOBAL_COMMANDS, GLAD_ARRAYSIZE(GLOBAL_COMMANDS), nameHash);
+    return glad_hash_search(GLAD_{{ feature_set.name|api }}_global_commands, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_global_commands), nameHash);
 }
 
 {% endif %}
