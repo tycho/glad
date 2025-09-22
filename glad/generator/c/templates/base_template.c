@@ -135,7 +135,7 @@ static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(',
     #pragma nounroll
     #endif
     for (pfnIdx = pfnStart; pfnIdx < pfnStart + numPfns; ++pfnIdx) {
-        context->pfnArray[pfnIdx] = load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+        context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
     }
 }
 
@@ -153,7 +153,7 @@ static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }
     #endif
     for (i = 0; i < numPfns; ++i) {
         const uint16_t pfnIdx = pPfnIdx[i];
-        context->pfnArray[pfnIdx] = load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+        context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
     }
 }
 
