@@ -96,7 +96,7 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 {% if not options.no_extension_detection %}
 static uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
 {% for extension in feature_set.extensions %}
-    /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
+    /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}ULL{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
 {% endfor %}
 };
 {% endif %}

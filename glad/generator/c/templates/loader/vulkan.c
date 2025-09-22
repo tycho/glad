@@ -7,13 +7,13 @@
 {% if not options.no_extension_detection %}
 static uint64_t GLAD_{{ feature_set.name|api }}_device_commands[] = {
 {% for command in device_commands | sort(attribute=hash_sort_key) %}
-    {{ command.hash }}, /* {{ command.name }} */
+    {{ command.hash }}ULL, /* {{ command.name }} */
 {% endfor %}
 };
 
 static uint64_t GLAD_{{ feature_set.name|api }}_global_commands[] = {
 {% for command in global_commands | sort(attribute=hash_sort_key) %}
-    {{ command.hash }}, /* {{ command.name }} */
+    {{ command.hash }}ULL, /* {{ command.name }} */
 {% endfor %}
 };
 
