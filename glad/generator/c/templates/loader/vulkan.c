@@ -18,7 +18,7 @@ static GLADapiproc glad_vulkan_get_proc(void *vuserptr, const char *name, enum G
 
     switch (scope) {
     case CommandScopeUnknown:
-        result = glad_dlsym_handle(userptr.vk_handle, name);
+        result = (PFN_vkVoidFunction)glad_dlsym_handle(userptr.vk_handle, name);
         break;
     case CommandScopeGlobal:
         result = userptr.get_instance_proc_addr(NULL, name);
