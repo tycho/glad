@@ -49,7 +49,7 @@ extern "C" {
 {% endblock %}
 
 {%block funcnames %}
-static const char *GLAD_{{ feature_set.name|api }}_fn_names[] = {
+static const char * const GLAD_{{ feature_set.name|api }}_fn_names[] = {
 {% for command in feature_set.commands %}
     /* {{ "{:>4}".format(command.index)}} */ "{{ command.name }}"{% if not loop.last %},{% endif %}{{""}}
 {% endfor %}
@@ -57,7 +57,7 @@ static const char *GLAD_{{ feature_set.name|api }}_fn_names[] = {
 
 {% endblock %}
 {%block extnames %}
-static const char *GLAD_{{ feature_set.name|api }}_ext_names[] = {
+static const char * const GLAD_{{ feature_set.name|api }}_ext_names[] = {
 {% for extension in feature_set.extensions %}
     /* {{ "{:>4}".format(extension.index)}} */ "{{ extension.name }}"{% if not loop.last %},{% endif %}{{""}}
 {% endfor %}

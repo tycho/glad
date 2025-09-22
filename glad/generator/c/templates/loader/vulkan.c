@@ -5,13 +5,13 @@
 {% include 'loader/library.c' %}
 
 {% if not options.no_extension_detection %}
-static uint64_t GLAD_{{ feature_set.name|api }}_instance_commands[] = {
+static const uint64_t GLAD_{{ feature_set.name|api }}_instance_commands[] = {
 {% for command in instance_commands | sort(attribute=hash_sort_key) %}
     {{ command.hash }}ULL, /* {{ command.name }} */
 {% endfor %}
 };
 
-static uint64_t GLAD_{{ feature_set.name|api }}_global_commands[] = {
+static const uint64_t GLAD_{{ feature_set.name|api }}_global_commands[] = {
 {% for command in global_commands | sort(attribute=hash_sort_key) %}
     {{ command.hash }}ULL, /* {{ command.name }} */
 {% endfor %}
