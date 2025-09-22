@@ -218,9 +218,6 @@ GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_util
     };
     uint32_t i;
 
-    #ifdef __clang__
-    #pragma nounroll
-    #endif
     for (i = 0; i < GLAD_ARRAYSIZE(s_aliases); ++i) {
         i = glad_{{ spec.name }}_resolve_alias_group({{ 'context, ' if options.mx }}s_aliases, i, GLAD_ARRAYSIZE(s_aliases));
     }

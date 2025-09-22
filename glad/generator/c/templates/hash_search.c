@@ -40,7 +40,6 @@ GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
 {% if search_type == 1 %}
 static bool glad_hash_search_linear_slow(const uint64_t *arr, uint32_t size, uint64_t target) {
     uint32_t i;
-    #pragma nounroll
     for (i = 0; i < size; ++i) {
         if (arr[i] == target)
             return true;

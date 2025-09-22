@@ -104,7 +104,6 @@ static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     uint32_t i;
     if (!glad_gl_get_extensions({{ 'context, ' if options.mx }}&exts, &num_exts)) return 0;
 
-    #pragma nounroll
 {# If the list is a consecutive 0 to N list, we can just scan the whole thing without emitting an array. #}
 {% if (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_hashes); ++i)
