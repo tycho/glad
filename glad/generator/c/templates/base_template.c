@@ -65,6 +65,7 @@ static const char *GLAD_{{ feature_set.name|api }}_ext_names[] = {
 
 {% endblock %}
 {%block extranges %}
+{% if not options.no_extension_detection %}
 {% if options.use_pfn_ranges %}
 static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[] = {
 {% for extension, command_ranges in feature_ranges() %}
@@ -88,6 +89,7 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 {% endfor %}
 };
 
+{% endif %}
 {% endif %}
 {% endblock %}
 {% block commandidx %}
@@ -123,6 +125,7 @@ int GLAD_{{ extension.name }} = 0;
 {% endif %}
 
 {% block range_loader %}
+{% if not options.no_extension_detection %}
 {% if options.use_pfn_ranges %}
 static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
 {
@@ -136,6 +139,7 @@ static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(',
     }
 }
 
+{% endif %}
 {% endif %}
 {% endblock %}
 {% block extension_loaders %}
