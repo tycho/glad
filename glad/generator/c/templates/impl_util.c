@@ -21,7 +21,6 @@ typedef struct {
     uint16_t second;
 } GladAliasPair_t;
 
-{% if not options.no_extension_detection %}
 {% if options.use_pfn_ranges %}
 typedef struct {
     uint16_t extension;
@@ -29,6 +28,5 @@ typedef struct {
     uint16_t count;
 } GladPfnRange_t;
 
-{% endif %}
 {% endif %}
 #endif /* GLAD_IMPL_UTIL_C_ */

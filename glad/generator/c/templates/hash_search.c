@@ -1,6 +1,10 @@
 #ifndef GLAD_IMPL_UTIL_HASHSEARCH_C_
 #define GLAD_IMPL_UTIL_HASHSEARCH_C_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 {# Configure the search algorithm used to find matching hashes in arrays. #}
 {# 0 = binary search, 1 = explicit SIMD, 2 = auto-vectorized, 3 = naive linear search #}
 {% if search_type == 0 %}
@@ -22,7 +26,6 @@ GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, 
     }
     return false;
 }
-{% if not options.no_extension_detection %}
 
 GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
 {
@@ -32,7 +35,6 @@ GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
     else if (a < b) return -1;
     else            return 0;
 }
-{% endif %}
 
 {% endif %}
 {% if search_type == 1 %}
@@ -121,5 +123,9 @@ GLAD_NO_INLINE static uint64_t glad_hash_string(const char *str, size_t length)
 {
     return XXH3_64bits(str, length);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GLAD_IMPL_HASHSEARCH_C_ */

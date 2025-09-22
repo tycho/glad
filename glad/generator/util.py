@@ -31,17 +31,37 @@ def is_global_command(self):
     :return: boolean indicating if the command is global
     """
     # See https://registry.khronos.org/vulkan/specs/latest/man/html/vkGetInstanceProcAddr.html
-    dlsym_commands = [
+    global_commands = [
         "vkCreateInstance",
         "vkEnumerateInstanceExtensionProperties",
         "vkEnumerateInstanceLayerProperties",
         "vkEnumerateInstanceVersion",
     ]
-    return self.name in dlsym_commands
+    return self.name in global_commands
+
+
+def is_dlsym_command(self):
+    """
+    Returns true if the command is a dlsym-loaded Vulkan comamnd.
+
+    :return: boolean indicating if the command should be loaded via dlsym
+    """
+    return self.name == "vkGetInstanceProcAddr"
 
 
 def is_instance_command(self):
     return not is_global_command(self) and not is_device_command(self)
+
+
+def command_scope_name(self):
+    if is_device_command(self):
+        return "Device"
+    elif is_global_command(self):
+        return "Global"
+    elif is_dlsym_command(self):
+        return "Unknown"
+    else:
+        return "Instance"
 
 
 def strip_specification_prefix(name, spec_name=None):

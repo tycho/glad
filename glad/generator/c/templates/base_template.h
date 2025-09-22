@@ -87,7 +87,6 @@ typedef struct Glad{{ feature_set.name|api }}Context {
         };
     };
 
-{% if not options.no_extension_detection %}
     union {
         unsigned char extArray[{{feature_set.extensions|length}}];
         struct {
@@ -97,7 +96,6 @@ typedef struct Glad{{ feature_set.name|api }}Context {
         };
     };
 
-{% endif %}
     union {
         void *pfnArray[{{ feature_set.commands|length }}];
         struct {
@@ -119,12 +117,10 @@ typedef struct Glad{{ feature_set.name|api }}Context {
 {% if options.mx_global %}
 GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_context;
 
-{% if not options.no_extension_detection %}
 {% for extension in chain(feature_set.features, feature_set.extensions) %}
 #define GLAD_{{ extension.name }} (glad_{{ feature_set.name }}_context.{{ extension.name|no_prefix }})
 {% endfor %}
 
-{% endif %}
 #ifdef __INTELLISENSE__
 {{ template_utils.write_function_definitions(feature_set.commands) }}
 #else

@@ -4,61 +4,36 @@
 {% set loader_handle = template_utils.handle('vulkan') %}
 {% include 'loader/library.c' %}
 
-{% if not options.no_extension_detection %}
-static const uint64_t GLAD_{{ feature_set.name|api }}_instance_commands[] = {
-{% for command in instance_commands | sort(attribute=hash_sort_key) %}
-    {{ command.hash }}ULL, /* {{ command.name }} */
-{% endfor %}
-};
-
-static const uint64_t GLAD_{{ feature_set.name|api }}_global_commands[] = {
-{% for command in global_commands | sort(attribute=hash_sort_key) %}
-    {{ command.hash }}ULL, /* {{ command.name }} */
-{% endfor %}
-};
-
-static int glad_vulkan_is_instance_command(uint64_t nameHash) {
-    /* Exists as a workaround for:
-     * https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues/2323
-     *
-     * `vkGetDeviceProcAddr` does not return NULL for non-device functions.
-     */
-    return glad_hash_search(GLAD_{{ feature_set.name|api }}_instance_commands, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_instance_commands), nameHash);
-}
-
-static int glad_vulkan_is_global_command(uint64_t nameHash) {
-    return glad_hash_search(GLAD_{{ feature_set.name|api }}_global_commands, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_global_commands), nameHash);
-}
-
-{% endif %}
 struct _glad_vulkan_userptr {
     void *vk_handle;
-{% if not options.no_extension_detection %}
     VkInstance vk_instance;
     VkDevice vk_device;
     PFN_vkGetInstanceProcAddr get_instance_proc_addr;
     PFN_vkGetDeviceProcAddr get_device_proc_addr;
-{% endif %}
 };
 
-static GLADapiproc glad_vulkan_get_proc(void *vuserptr, const char *name) {
-{% if not options.no_extension_detection %}
+static GLADapiproc glad_vulkan_get_proc(void *vuserptr, const char *name, enum GLADcommandscope scope ) {
     struct _glad_vulkan_userptr userptr = *(struct _glad_vulkan_userptr*) vuserptr;
-    uint64_t nameHash = glad_hash_string(name, strlen(name));
     PFN_vkVoidFunction result = NULL;
 
-    if (glad_vulkan_is_global_command(nameHash))
+    switch (scope) {
+    case CommandScopeUnknown:
+        result = glad_dlsym_handle(userptr.vk_handle, name);
+        break;
+    case CommandScopeGlobal:
         result = userptr.get_instance_proc_addr(NULL, name);
-    else if (glad_vulkan_is_instance_command(nameHash))
-        result = userptr.get_instance_proc_addr(userptr.vk_instance, name);
-    else
-        result = userptr.get_device_proc_addr(userptr.vk_device, name);
+        break;
+    case CommandScopeDevice:
+        if (userptr.vk_device != NULL)
+            result = userptr.get_device_proc_addr(userptr.vk_device, name);
+        break;
+    case CommandScopeInstance:
+        if (userptr.vk_instance != NULL)
+            result = userptr.get_instance_proc_addr(userptr.vk_instance, name);
+        break;
+    }
 
     return (GLADapiproc) result;
-{% else %}
-    struct _glad_vulkan_userptr userptr = *(struct _glad_vulkan_userptr*) vuserptr;
-    return glad_dlsym_handle(userptr.vk_handle, name);
-{% endif %}
 }
 
 {% if not options.mx %}
@@ -86,15 +61,13 @@ static void* glad_vulkan_dlopen_handle({{ template_utils.context_arg(def='void')
     return {{ loader_handle }};
 }
 
-static struct _glad_vulkan_userptr glad_vulkan_build_userptr(void *handle{{ ', VkInstance instance, VkDevice device' if not options.no_extension_detection }}) {
+static struct _glad_vulkan_userptr glad_vulkan_build_userptr(void *handle, VkInstance instance, VkDevice device) {
     struct _glad_vulkan_userptr userptr;
     userptr.vk_handle = handle;
-{% if not options.no_extension_detection %}
     userptr.vk_instance = instance;
     userptr.vk_device = device;
     userptr.get_instance_proc_addr = (PFN_vkGetInstanceProcAddr) glad_dlsym_handle(handle, "vkGetInstanceProcAddr");
     userptr.get_device_proc_addr = (PFN_vkGetDeviceProcAddr) glad_dlsym_handle(handle, "vkGetDeviceProcAddr");
-{% endif %}
     return userptr;
 }
 
@@ -107,7 +80,7 @@ int gladLoaderLoadVulkan{{ 'Context' if options.mx }}({{ template_utils.context_
     did_load = {{ loader_handle }} == NULL;
     handle = glad_vulkan_dlopen_handle({{ 'context' if options.mx }});
     if (handle != NULL) {
-        userptr = glad_vulkan_build_userptr(handle{{ ', instance, device' if not options.no_extension_detection }});
+        userptr = glad_vulkan_build_userptr(handle, instance, device);
 
         version = gladLoadVulkan{{ 'Context' if options.mx }}UserPtr({{ 'context,' if options.mx }}instance, physical_device, device, glad_vulkan_get_proc, &userptr);
 

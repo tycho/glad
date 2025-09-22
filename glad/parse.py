@@ -29,6 +29,7 @@ from contextlib import closing
 from itertools import chain
 from xxhash import xxh3_64_hexdigest
 
+from glad.generator.util import command_scope_name
 from glad.opener import URLOpener
 from glad.util import Version, topological_sort, memoize
 import glad.util
@@ -90,6 +91,7 @@ class FeatureSet(object):
         for command in commands:
             command.index = index
             command.hash = '0x' + xxh3_64_hexdigest(command.name)
+            command.scope = command_scope_name(command)
             index += 1
 
         index = 0

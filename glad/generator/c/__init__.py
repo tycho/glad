@@ -313,11 +313,6 @@ class CConfig(Config):
         default=False,
         description='Include internal loaders for APIs'
     )
-    NO_EXTENSION_DETECTION = ConfigOption(
-        converter=bool,
-        default=False,
-        description='Disable API extension detection'
-    )
     USE_PFN_RANGES = ConfigOption(
         converter=bool,
         default=False,
@@ -484,10 +479,6 @@ class CGenerator(JinjaGenerator):
 
     def get_template_arguments(self, spec, feature_set, config):
         args = JinjaGenerator.get_template_arguments(self, spec, feature_set, config)
-
-        # Disabling extension detection only makes sense on Vulkan for now
-        if spec.name not in (VK.NAME,):
-            args['options']['no_extension_detection'] = False
 
         # Only GL, EGL, WGL, and Vulkan have use_pfn_ranges right now
         if spec.name not in (VK.NAME, GL.NAME, EGL.NAME, WGL.NAME):

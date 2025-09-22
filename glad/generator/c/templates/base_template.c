@@ -30,10 +30,8 @@
 {% endblock %}
 {% include 'impl_util.c' %}
 {% block hashsearch %}
-{% if not options.no_extension_detection %}
 
 {% include 'hash_search.c' %}
-{% endif %}
 {% endblock %}
 {% endblock %}
 
@@ -48,13 +46,15 @@ extern "C" {
 {% endif %}
 {% endblock %}
 
-{%block funcnames %}
+{% block funcnames %}
 static const char * const GLAD_{{ feature_set.name|api }}_fn_names[] = {
 {% for command in feature_set.commands %}
     /* {{ "{:>4}".format(command.index)}} */ "{{ command.name }}"{% if not loop.last %},{% endif %}{{""}}
 {% endfor %}
 };
 
+{% endblock %}
+{% block funcscopes %}
 {% endblock %}
 {%block extnames %}
 static const char * const GLAD_{{ feature_set.name|api }}_ext_names[] = {
@@ -64,8 +64,7 @@ static const char * const GLAD_{{ feature_set.name|api }}_ext_names[] = {
 };
 
 {% endblock %}
-{%block extranges %}
-{% if not options.no_extension_detection %}
+{% block extranges %}
 {% if options.use_pfn_ranges %}
 static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[] = {
 {% for extension, command_ranges in feature_ranges() %}
@@ -90,18 +89,15 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 };
 
 {% endif %}
-{% endif %}
 {% endblock %}
 {% block commandidx %}
 {% endblock %}
 {% block exthashes %}
-{% if not options.no_extension_detection %}
 static uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
 {% for extension in feature_set.extensions %}
     /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}ULL{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
 {% endfor %}
 };
-{% endif %}
 {% endblock %}
 {% block extensions %}
 {% if not options.mx %}
@@ -124,39 +120,32 @@ int GLAD_{{ extension.name }} = 0;
 {% endblock %}
 {% endif %}
 
-{% block range_loader %}
-{% if not options.no_extension_detection %}
+{% block pfn_loader %}
 {% if options.use_pfn_ranges %}
 static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
 {
     uint32_t pfnIdx;
 
-    #ifdef __clang__
-    #pragma nounroll
-    #endif
     for (pfnIdx = pfnStart; pfnIdx < pfnStart + numPfns; ++pfnIdx) {
         context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
     }
 }
 
-{% endif %}
-{% endif %}
-{% endblock %}
-{% block extension_loaders %}
-{% if not options.no_extension_detection and not options.use_pfn_ranges %}
+{% else  %}
 static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, const uint16_t *pPfnIdx, uint32_t numPfns)
 {
     uint32_t i;
 
-    #ifdef __clang__
-    #pragma nounroll
-    #endif
     for (i = 0; i < numPfns; ++i) {
         const uint16_t pfnIdx = pPfnIdx[i];
         context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
     }
 }
 
+{% endif %}
+{% endblock %}
+{% block extension_loaders %}
+{% if not options.use_pfn_ranges %}
 {% for extension, commands in loadable() %}
 {% call template_utils.protect(extension) %}
 static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr) {
@@ -165,9 +154,7 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
         {{ "{:>4}".format(command.index) }}{% if not loop.last %},{% else %} {% endif %} /* {{ command.name }} */
 {% endfor %}
     };
-{% if not options.no_extension_detection %}
     if (!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
-{% endif %}
     glad_{{ spec.name }}_load_pfns({{'context, ' if options.mx }}load, userptr, s_pfnIdx, GLAD_ARRAYSIZE(s_pfnIdx));
 }
 
@@ -180,7 +167,7 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 {% if aliases|length > 0 %}
 static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.context_arg(', ') }}const GladAliasPair_t *pairs, uint32_t start_idx, uint32_t total_count) {
     void **pfnArray = context->pfnArray;
-	void *canonical_ptr;
+    void *canonical_ptr;
     uint16_t canonical_idx = pairs[start_idx].first;
     uint32_t i, end_idx = start_idx;
 
