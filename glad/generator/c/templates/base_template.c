@@ -176,18 +176,19 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 {% if aliases|length > 0 %}
 static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.context_arg(', ') }}const GladAliasPair_t *pairs, uint32_t start_idx, uint32_t total_count) {
     void **pfnArray = context->pfnArray;
+	void *canonical_ptr;
     uint16_t canonical_idx = pairs[start_idx].first;
+    uint32_t i, end_idx = start_idx;
 
     /* Find the end of this group (consecutive pairs with same canonical index) */
-    uint32_t end_idx = start_idx;
     while (end_idx < total_count && pairs[end_idx].first == canonical_idx) {
         end_idx++;
     }
 
     /* Pass 1: Find any loaded secondary for this canonical */
-    void *canonical_ptr = pfnArray[canonical_idx];
+    canonical_ptr = pfnArray[canonical_idx];
     if (canonical_ptr == NULL) {
-        for (uint32_t i = start_idx; i < end_idx; ++i) {
+        for (i = start_idx; i < end_idx; ++i) {
             if (pfnArray[pairs[i].second] != NULL) {
                 canonical_ptr = pfnArray[pairs[i].second];
                 pfnArray[canonical_idx] = canonical_ptr;
@@ -198,7 +199,7 @@ static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.cont
 
     /* Pass 2: Populate unloaded secondaries */
     if (canonical_ptr != NULL) {
-        for (uint32_t i = start_idx; i < end_idx; ++i) {
+        for (i = start_idx; i < end_idx; ++i) {
             if (pfnArray[pairs[i].second] == NULL) {
                 pfnArray[pairs[i].second] = canonical_ptr;
             }
