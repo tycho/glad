@@ -57,6 +57,7 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 {% endif %}
 {% endblock %}
 {% block loader %}
+{% if feature_set.extensions|length > 0 %}
 static int glad_vk_get_extensions({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device, uint32_t *out_extension_count, uint64_t **out_extensions) {
     uint32_t i;
     uint32_t instance_extension_count = 0;
@@ -156,13 +157,14 @@ static int glad_vk_has_extension(uint64_t *extensions, uint64_t extension_count,
     return glad_hash_search(extensions, extension_count, name);
 }
 
+{% endif %}
 static GLADapiproc glad_vk_get_proc_from_userptr(void *userptr, const char* name, enum GLADcommandscope scope) {
     return (GLAD_GNUC_EXTENSION (GLADapiproc (*)(const char *, enum GLADcommandscope)) userptr)(name, scope);
 }
 
 {% for api in feature_set.info.apis %}
-static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
 {% if feature_set.extensions|length > 0 %}
+static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
 {% if not feature_set.extensions|index_consecutive_0_to_N %}
     static const uint16_t extIdx[] = {
 {% for extension in feature_set.extensions %}
@@ -194,19 +196,10 @@ static int glad_vk_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     GLAD_UNUSED(glad_vk_has_extension);
 
     glad_vk_free_extensions(extensions);
-{% else %}
-{% if options.mx %}
-    GLAD_UNUSED(context);
-{% endif %}
-    GLAD_UNUSED(physical_device);
-    GLAD_UNUSED(glad_vk_get_extensions);
-    GLAD_UNUSED(glad_vk_has_extension);
-    GLAD_UNUSED(glad_vk_free_extensions);
-    GLAD_UNUSED(GLAD_{{ feature_set.name|api }}_ext_hashes);
-{% endif %}
     return 1;
 }
 
+{% endif %}
 static int glad_vk_find_core_{{ api|lower }}({{ template_utils.context_arg(',') }} VkPhysicalDevice physical_device) {
     const uint32_t API_VARIANT_MASK = 0xe0000000;
     int major = 1;
@@ -279,6 +272,7 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 {% endfor %}
 {% endif %}
 
+{% if feature_set.extensions|length > 0 %}
     if (!glad_vk_find_extensions_{{ api|lower }}({{ 'context,' if options.mx }} physical_device)) return 0;
 
 {% if options.use_pfn_ranges %}
@@ -296,14 +290,15 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 {% endfor %}
 {% endif %}
 
+{% endif %}
 {% if options.mx_global %}
     gladSet{{ api|api }}Context(context);
-{% endif %}
 
+{% endif %}
 {%- if options.alias %}
     glad_vk_resolve_aliases({{ 'context' if options.mx }});
-{% endif %}
 
+{% endif %}
     return version;
 }
 

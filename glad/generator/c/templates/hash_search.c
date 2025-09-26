@@ -1,3 +1,5 @@
+{% if feature_set.extensions|length > 0 %}
+
 #ifndef GLAD_IMPL_UTIL_HASHSEARCH_C_
 #define GLAD_IMPL_UTIL_HASHSEARCH_C_
 
@@ -128,3 +130,4 @@ GLAD_NO_INLINE static uint64_t glad_hash_string(const char *str, size_t length)
 #endif
 
 #endif /* GLAD_IMPL_HASHSEARCH_C_ */
+{% endif %}

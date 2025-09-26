@@ -10,7 +10,6 @@
 #include <dlfcn.h>
 #endif
 
-
 static void* glad_get_dlopen_handle(const char *lib_names[], int length) {
     void *handle = NULL;
     int i;

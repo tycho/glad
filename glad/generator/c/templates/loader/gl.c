@@ -26,8 +26,8 @@ static GLADapiproc glad_gl_get_proc(void *vuserptr, const char *name) {
 
 {% if not options.mx %}
 static void* {{ loader_handle }} = NULL;
-{% endif %}
 
+{% endif %}
 static void* glad_gl_dlopen_handle({{ template_utils.context_arg(def='void') }}) {
 #if GLAD_PLATFORM_APPLE
     static const char *NAMES[] = {
@@ -121,8 +121,8 @@ void gladLoaderResetGL(void) {
 int gladLoaderLoadGL(void) {
     return gladLoaderLoadGLContext(gladGet{{ feature_set.name|api }}Context());
 }
-{% endif %}
 
+{% endif %}
 void gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
     if ({{ loader_handle }} != NULL) {
         glad_close_dlopen_handle({{ loader_handle }});
@@ -140,6 +140,6 @@ void gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ template_utils.context_a
 void gladLoaderUnloadGL(void) {
     gladLoaderUnloadGLContext(gladGet{{ feature_set.name|api }}Context());
 }
-{% endif %}
 
+{% endif %}
 #endif /* GLAD_GL */

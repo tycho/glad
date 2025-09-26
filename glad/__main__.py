@@ -20,7 +20,7 @@ from glad.sink import LoggingSink
 from glad.opener import URLOpener
 from glad.parse import FeatureSet
 from glad.plugin import find_specifications, find_generators
-from glad.util import parse_apis
+from glad.util import parse_apis, Version
 
 
 logger = logging.getLogger('glad')
@@ -177,6 +177,11 @@ def main(args=None):
         extensions = global_config['EXTENSIONS']
         if extensions:
             extensions = [ext for ext in extensions if specification.is_extension(api, ext)]
+
+        # HACK: On GLX 1.0, we can't load determine any extension support, so
+        # let's just not generate any extension queries or lists at all.
+        if api == 'glx' and info.version is not None and info.version < Version(1,1):
+            extensions = []
 
         return generator.select(specification, api, info.version, info.profile, extensions, config, sink=logging_sink)
 

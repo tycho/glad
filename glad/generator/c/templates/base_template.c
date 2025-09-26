@@ -17,9 +17,11 @@
 #include <arm_neon.h>
 #endif
 
+{% if feature_set.extensions|length > 0 %}
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
+{% endif %}
 {% if not options.header_only %}
 {% block glad_include %}
 #include <glad/{{ feature_set.name }}.h>
@@ -30,7 +32,6 @@
 {% endblock %}
 {% include 'impl_util.c' %}
 {% block hashsearch %}
-
 {% include 'hash_search.c' %}
 {% endblock %}
 {% endblock %}
@@ -57,12 +58,14 @@ static const char * const GLAD_{{ feature_set.name|api }}_fn_names[] = {
 {% block funcscopes %}
 {% endblock %}
 {%block extnames %}
+{% if feature_set.extensions|length > 0 %}
 static const char * const GLAD_{{ feature_set.name|api }}_ext_names[] = {
 {% for extension in feature_set.extensions %}
     /* {{ "{:>4}".format(extension.index)}} */ "{{ extension.name }}"{% if not loop.last %},{% endif %}{{""}}
 {% endfor %}
 };
 
+{% endif %}
 {% endblock %}
 {% block extranges %}
 {% if options.use_pfn_ranges %}
@@ -77,6 +80,7 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[]
 {% endfor %}
 };
 
+{% if feature_set.extensions|length > 0 %}
 static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 {% for extension, command_ranges in extension_ranges() %}
 {% call template_utils.protect(extension) %}
@@ -89,15 +93,18 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 };
 
 {% endif %}
+{% endif %}
 {% endblock %}
 {% block commandidx %}
 {% endblock %}
 {% block exthashes %}
+{% if feature_set.extensions|length > 0 %}
 static const uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
 {% for extension in feature_set.extensions %}
     /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}ULL{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
 {% endfor %}
 };
+{% endif %}
 {% endblock %}
 {% block extensions %}
 {% if not options.mx %}
@@ -119,7 +126,6 @@ int GLAD_{{ extension.name }} = 0;
 {% endfor %}
 {% endblock %}
 {% endif %}
-
 {% block pfn_loader %}
 {% if options.use_pfn_ranges %}
 static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
@@ -200,8 +206,6 @@ static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.cont
     return end_idx - 1;  /* Return index of last processed pair */
 }
 
-{% endif %}
-{%if aliases|length > 0 %}
 static const GladAliasPair_t GLAD_{{ feature_set.name|api }}_command_aliases[] = {
 {% for command in feature_set.commands|sort(attribute='name') %}
 {% if aliases.get(command.name, [])|length > 0 %}
@@ -232,10 +236,8 @@ GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_util
 }
 {% endif %}
 {% endblock %}
-
 {% block loader %}
 {% endblock %}
-
 {% if options.loader %}
 {% block loader_impl %}
 {% for api in feature_set.info.apis %}

@@ -2,8 +2,8 @@
 
 {% block extnames %}
 {% endblock %}
-
 {% block loader %}
+{% if feature_set.extensions|length > 0 %}
 static int glad_gl_get_extensions({{ template_utils.context_arg(', ') }}uint64_t **out_exts, uint32_t *out_num_exts) {
     uint32_t num_exts = 0;
     uint64_t *exts = NULL;
@@ -88,11 +88,13 @@ static int glad_gl_has_extension(uint64_t *exts, uint32_t num_exts, uint64_t ext
     return glad_hash_search(exts, num_exts, ext);
 }
 
+{% endif %}
 static GLADapiproc glad_gl_get_proc_from_userptr(void *userptr, const char* name) {
     return (GLAD_GNUC_EXTENSION (GLADapiproc (*)(const char *name)) userptr)(name);
 }
 
 {% for api in feature_set.info.apis %}
+{% if feature_set.extensions|length > 0 %}
 static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg(def='void') }}) {
 {% if feature_set.extensions|select('supports', api)|count > 0  %}
 {% if not (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
@@ -132,6 +134,7 @@ static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     return 1;
 }
 
+{% endif %}
 static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='void') }}) {
     int i;
     const char* version;
@@ -189,6 +192,7 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 {% endfor %}
 {% endif %}
 
+{% if feature_set.extensions|length > 0 %}
     if (!glad_gl_find_extensions_{{ api|lower }}({{ 'context' if options.mx }})) return 0;
 
 {% if options.use_pfn_ranges %}
@@ -204,14 +208,15 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 {% endfor %}
 {% endif%}
 
+{% endif %}
 {% if options.mx_global %}
     gladSet{{ feature_set.name|api }}Context(context);
-{% endif %}
 
+{% endif %}
 {% if options.alias %}
     glad_gl_resolve_aliases({{ 'context' if options.mx }});
-{% endif %}
 
+{% endif %}
     return version;
 }
 
@@ -219,8 +224,8 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 int gladLoad{{ api|api }}UserPtr(GLADuserptrloadfunc load, void *userptr) {
     return gladLoad{{ api|api }}ContextUserPtr(gladGet{{ feature_set.name|api }}Context(), load, userptr);
 }
-{% endif %}
 
+{% endif %}
 int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}GLADloadfunc load) {
     return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context, ' if options.mx }}glad_gl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
@@ -229,10 +234,9 @@ int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context
 int gladLoad{{ api|api }}(GLADloadfunc load) {
     return gladLoad{{ api|api }}Context(gladGet{{ feature_set.name|api }}Context(), load);
 }
+
 {% endif %}
-
 {% endfor %}
-
 {% if options.mx_global %}
 Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context() {
     return &{{ global_context }};
