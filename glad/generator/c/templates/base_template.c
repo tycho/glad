@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+{% if feature_set.extensions|length > 0 %}
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_X64)
 #define XXH_VECTOR XXH_SSE2
 #include <immintrin.h>
@@ -17,8 +18,8 @@
 #include <arm_neon.h>
 #endif
 
-{% if feature_set.extensions|length > 0 %}
 #define XXH_INLINE_ALL
+#define XXH_NO_STREAM
 #include "xxhash.h"
 
 {% endif %}
