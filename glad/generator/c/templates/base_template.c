@@ -201,25 +201,28 @@ static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.cont
 }
 
 {% endif %}
-GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
 {%if aliases|length > 0 %}
-    static const GladAliasPair_t s_aliases[] = {
+static const GladAliasPair_t GLAD_{{ feature_set.name|api }}_command_aliases[] = {
 {% for command in feature_set.commands|sort(attribute='name') %}
 {% if aliases.get(command.name, [])|length > 0 %}
 {% call template_utils.protect(command) %}
 {% for alias in aliases.get(command.name, [])|reject('equalto', (command.name, command.index)) %}
 {% call template_utils.protect(alias) %}
-        { {{ "{:>4}".format(command.index) }}, {{ "{:>4}".format(alias[1]) }} }, /* {{ command.name }} and {{ alias[0] }} */
+    { {{ "{:>4}".format(command.index) }}, {{ "{:>4}".format(alias[1]) }} }, /* {{ command.name }} and {{ alias[0] }} */
 {% endcall %}
 {% endfor %}
 {% endcall %}
 {% endif %}
 {% endfor %}
-    };
+};
+
+{% endif %}
+GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
+{%if aliases|length > 0 %}
     uint32_t i;
 
-    for (i = 0; i < GLAD_ARRAYSIZE(s_aliases); ++i) {
-        i = glad_{{ spec.name }}_resolve_alias_group({{ 'context, ' if options.mx }}s_aliases, i, GLAD_ARRAYSIZE(s_aliases));
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_command_aliases); ++i) {
+        i = glad_{{ spec.name }}_resolve_alias_group({{ 'context, ' if options.mx }}GLAD_{{ feature_set.name|api }}_command_aliases, i, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_command_aliases));
     }
 {% else %}
 {% if options.mx %}
