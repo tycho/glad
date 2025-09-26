@@ -126,6 +126,7 @@ static int glad_vk_get_extensions({{ template_utils.context_arg(',') }} VkPhysic
     }
 
 {% if search_type == 0 %}
+    /* Sort extension list for binary search */
     qsort(extensions, total_extension_count, sizeof(uint64_t), compare_uint64);
 
 {% endif %}
