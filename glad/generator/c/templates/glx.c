@@ -13,6 +13,7 @@ static GLADapiproc glad_glx_get_proc_from_userptr(void *userptr, const char* nam
 }
 
 static int glad_glx_get_extensions({{ template_utils.context_arg(', ') }}Display *display, int screen, uint64_t **out_exts, uint32_t *out_num_exts) {
+#ifdef GLX_VERSION_1_1
     uint32_t num_exts = 0;
     uint64_t *exts = NULL;
     const char *exts_str = NULL;
@@ -63,7 +64,14 @@ static int glad_glx_get_extensions({{ template_utils.context_arg(', ') }}Display
 {% endif %}
     *out_num_exts = num_exts;
     *out_exts = exts;
-
+#else
+    GLAD_UNUSED(context);
+    GLAD_UNUSED(display);
+    GLAD_UNUSED(screen);
+    GLAD_UNUSED(glad_hash_string);
+    *out_num_exts = 0;
+    *out_exts = NULL;
+#endif
     return 1;
 }
 
@@ -72,7 +80,18 @@ static void glad_glx_free_extensions(uint64_t *exts) {
 }
 
 static int glad_glx_has_extension(uint64_t *exts, uint32_t num_exts, uint64_t ext) {
+#ifdef GLX_VERSION_1_1
     return glad_hash_search(exts, num_exts, ext);
+#else
+    GLAD_UNUSED(exts);
+    GLAD_UNUSED(num_exts);
+    GLAD_UNUSED(ext);
+    GLAD_UNUSED(compare_uint64);
+    GLAD_UNUSED(glad_hash_search);
+
+    /* We can't detect if an extension is supported without glXQueryExtensionsString */
+    return 0;
+#endif
 }
 
 {% for api in feature_set.info.apis %}
