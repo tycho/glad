@@ -72,10 +72,9 @@ static const char * const GLAD_{{ feature_set.name|api }}_ext_names[] = {
 static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[] = {
 {% for extension, command_ranges in feature_ranges() %}
 {% call template_utils.protect(extension) %}
-    /* {{ extension.name }} */
 {% for cmd_range in command_ranges %}
-    { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} },
-{% endfor %}{% if not loop.last %}{{"\n"}}{% endif %}
+    { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} }, /* {{ extension.name }} */
+{% endfor %}
 {% endcall %}
 {% endfor %}
 };
@@ -84,10 +83,9 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[]
 static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 {% for extension, command_ranges in extension_ranges() %}
 {% call template_utils.protect(extension) %}
-    /* {{ extension.name }} */
 {% for cmd_range in command_ranges %}
-    { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} },
-{% endfor %}{% if not loop.last %}{{"\n"}}{% endif %}
+    { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} }, /* {{ extension.name }} */
+{% endfor %}
 {% endcall %}
 {% endfor %}
 };
