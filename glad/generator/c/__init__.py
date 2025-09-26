@@ -20,7 +20,7 @@ from glad.generator.util import (
     jinja2_contextfilter
 )
 from glad.parse import Type, EnumType
-from glad.specification import VK, EGL, GL, WGL
+from glad.specification import VK, EGL, GL, GLX, WGL
 import glad.util
 
 _ARRAY_RE = re.compile(r'\[[\d\w]*\]')
@@ -480,8 +480,8 @@ class CGenerator(JinjaGenerator):
     def get_template_arguments(self, spec, feature_set, config):
         args = JinjaGenerator.get_template_arguments(self, spec, feature_set, config)
 
-        # Only GL, EGL, WGL, and Vulkan have use_pfn_ranges right now
-        if spec.name not in (VK.NAME, GL.NAME, EGL.NAME, WGL.NAME):
+        # Only some specifications have use_pfn_ranges implemented right now
+        if spec.name not in (EGL.NAME, GL.NAME, GLX.NAME, VK.NAME, WGL.NAME,):
             args['options']['use_pfn_ranges'] = False
 
         # Search and sort parameters for string hashes
