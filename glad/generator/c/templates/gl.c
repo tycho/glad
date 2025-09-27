@@ -10,7 +10,8 @@ static int glad_gl_get_extensions({{ template_utils.context_arg(', ') }}uint64_t
     const char *exts_str = NULL;
     const char *cur = NULL;
     const char *next = NULL;
-    uint32_t len = 0, j = 0;
+    uint32_t j;
+    size_t len;
 
 #if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0)
     if ({{ 'glGetStringi'|ctx }} != NULL && {{ 'glGetIntegerv'|ctx }} != NULL) {
@@ -24,7 +25,7 @@ static int glad_gl_get_extensions({{ template_utils.context_arg(', ') }}uint64_t
         }
         for(index = 0; index < num_exts; index++) {
             const char *gl_str_tmp = (const char*) {{ 'glGetStringi'|ctx }}(GL_EXTENSIONS, index);
-            size_t len = strlen(gl_str_tmp);
+            len = strlen(gl_str_tmp);
             exts[index] = glad_hash_string(gl_str_tmp, len);
         }
     } else
@@ -52,7 +53,7 @@ static int glad_gl_get_extensions({{ template_utils.context_arg(', ') }}uint64_t
                 if (!cur[0])
                     break;
 
-                len = next - cur;
+                len = (size_t)(next - cur);
 
                 if (exts != NULL) {
                     exts[num_exts++] = glad_hash_string(cur, len);
