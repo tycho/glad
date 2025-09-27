@@ -43,9 +43,7 @@ extern "C" {
 
 {% set global_context = 'glad_' + feature_set.name + '_context' -%}
 {% block variables %}
-{% if options.mx_global %}
 {% call template_utils.zero_initialized() %}Glad{{ feature_set.name|api }}Context {{ global_context }}{% endcall %}
-{% endif %}
 {% endblock %}
 
 {% block funcnames %}
@@ -105,26 +103,6 @@ static const uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
 };
 {% endif %}
 {% endblock %}
-{% block extensions %}
-{% if not options.mx %}
-
-{% for extension in chain(feature_set.features, feature_set.extensions) %}
-{% call template_utils.protect(extension) %}
-int GLAD_{{ extension.name }} = 0;
-{% endcall %}
-{% endfor %}
-{% endif %}
-{% endblock %}
-{% if not options.mx %}
-{% block commands %}
-
-{% for command in feature_set.commands|c_commands %}
-{% call template_utils.protect(command) %}
-{{ command.name|pfn }} glad_{{ command.name }} = NULL;
-{% endcall %}
-{% endfor %}
-{% endblock %}
-{% endif %}
 {% block pfn_loader %}
 {% if options.use_pfn_ranges %}
 static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
@@ -160,7 +138,7 @@ static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.con
 {% endfor %}
     };
     if (!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
-    glad_{{ spec.name }}_load_pfns({{'context, ' if options.mx }}load, userptr, s_pfnIdx, GLAD_ARRAYSIZE(s_pfnIdx));
+    glad_{{ spec.name }}_load_pfns(context, load, userptr, s_pfnIdx, GLAD_ARRAYSIZE(s_pfnIdx));
 }
 
 {% endcall %}
@@ -220,17 +198,15 @@ static const GladAliasPair_t GLAD_{{ feature_set.name|api }}_command_aliases[] =
 };
 
 {% endif %}
-GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg(def='void') }}) {
+GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg() }}) {
 {%if aliases|length > 0 %}
     uint32_t i;
 
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_command_aliases); ++i) {
-        i = glad_{{ spec.name }}_resolve_alias_group({{ 'context, ' if options.mx }}GLAD_{{ feature_set.name|api }}_command_aliases, i, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_command_aliases));
+        i = glad_{{ spec.name }}_resolve_alias_group(context, GLAD_{{ feature_set.name|api }}_command_aliases, i, GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_command_aliases));
     }
 {% else %}
-{% if options.mx %}
     GLAD_UNUSED(context);
-{% endif %}
 {% endif %}
 }
 {% endif %}

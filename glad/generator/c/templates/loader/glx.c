@@ -3,14 +3,26 @@
 {% include 'loader/library.c' %}
 
 typedef void* (GLAD_API_PTR *GLADglxprocaddrfunc)(const char*);
+struct _glad_glx_userptr {
+    void *handle;
+    GLADglxprocaddrfunc glx_get_proc_address_ptr;
+};
 
-static GLADapiproc glad_glx_get_proc(void *userptr, const char *name) {
-    return GLAD_GNUC_EXTENSION ((GLADapiproc (*)(const char *name)) userptr)(name);
+static GLADapiproc glad_glx_get_proc(void *vuserptr, const char *name) {
+    struct _glad_glx_userptr userptr = *(struct _glad_glx_userptr*) vuserptr;
+    GLADapiproc result = NULL;
+
+    if(userptr.glx_get_proc_address_ptr != NULL) {
+        result = GLAD_GNUC_EXTENSION (GLADapiproc) userptr.glx_get_proc_address_ptr(name);
+    }
+    if(result == NULL) {
+        result = glad_dlsym_handle(userptr.handle, name);
+    }
+
+    return result;
 }
 
-static void* _glx_handle;
-
-static void* glad_glx_dlopen_handle(void) {
+static void* glad_glx_dlopen_handle({{ template_utils.context_arg() }}) {
     static const char *NAMES[] = {
 #if defined __CYGWIN__
         "libGL-1.so",
@@ -19,66 +31,66 @@ static void* glad_glx_dlopen_handle(void) {
         "libGL.so"
     };
 
-    if (_glx_handle == NULL) {
-        _glx_handle = glad_get_dlopen_handle(NAMES, GLAD_ARRAYSIZE(NAMES));
+    if ({{ template_utils.handle() }} == NULL) {
+        {{ template_utils.handle() }} = glad_get_dlopen_handle(NAMES, GLAD_ARRAYSIZE(NAMES));
     }
 
-    return _glx_handle;
+    return {{ template_utils.handle() }};
 }
 
-int gladLoaderLoadGLX(Display *display, int screen) {
-    int version = 0;
-    void *handle = NULL;
-    int did_load = 0;
-    GLADglxprocaddrfunc loader;
+static struct _glad_glx_userptr glad_glx_build_userptr(void *handle) {
+    struct _glad_glx_userptr userptr;
 
-    did_load = _glx_handle == NULL;
-    handle = glad_glx_dlopen_handle();
-    if (handle != NULL) {
-        loader = (GLADglxprocaddrfunc) glad_dlsym_handle(handle, "glXGetProcAddressARB");
-        if (loader != NULL) {
-            version = gladLoadGLXUserPtr(display, screen, glad_glx_get_proc, GLAD_GNUC_EXTENSION (void*) loader);
-        }
+    userptr.handle = handle;
+    userptr.glx_get_proc_address_ptr =
+        (GLADglxprocaddrfunc) glad_dlsym_handle(handle, "glXGetProcAddressARB");
+
+    return userptr;
+}
+
+int gladLoaderLoadGLXContext({{ template_utils.context_arg(', ') }}Display *display, int screen) {
+    int version = 0;
+    void *handle;
+    int did_load = 0;
+    struct _glad_glx_userptr userptr;
+
+    did_load = {{ template_utils.handle() }} == NULL;
+    handle = glad_glx_dlopen_handle(context);
+    if (handle) {
+        userptr = glad_glx_build_userptr(handle);
+
+        version = gladLoadGLXContextUserPtr(context, display, screen, glad_glx_get_proc, &userptr);
 
         if (!version && did_load) {
-            gladLoaderUnloadGLX();
+            gladLoaderUnloadGLXContext(context);
         }
     }
-
     return version;
 }
 
-void gladLoaderUnloadGLX() {
-    if (_glx_handle != NULL) {
-        glad_close_dlopen_handle(_glx_handle);
-        _glx_handle = NULL;
-    }
+int gladLoaderLoadGLX(Display *display, int screen) {
+    return gladLoaderLoadGLXContext(gladGet{{ feature_set.name|api }}Context(), display, screen);
 }
 
-{% if options.mx_global %}
+void gladLoaderUnloadGLXContext({{ template_utils.context_arg() }}) {
+    if ({{ template_utils.handle() }} != NULL) {
+        glad_close_dlopen_handle({{ template_utils.handle() }});
+        {{ template_utils.handle() }} = NULL;
+    }
+
+    gladLoaderResetGLXContext(context);
+}
+
+void gladLoaderUnloadGLX() {
+    gladLoaderUnloadGLXContext(gladGet{{ feature_set.name|api }}Context());
+}
+
 void gladLoaderResetGLX(void) {
     gladLoaderResetGLXContext(gladGetGLXContext());
 }
-{% endif %}
 
-void gladLoaderResetGLX{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
-{% if options.mx %}
+void gladLoaderResetGLXContext({{ template_utils.context_arg() }}) {
     memset(context, 0, sizeof(GladGLXContext));
-{% else %}
-{% for feature in feature_set.features %}
-    GLAD_{{ feature.name }} = 0;
-{% endfor %}
-
-{% for extension in feature_set.extensions %}
-    GLAD_{{ extension.name }} = 0;
-{% endfor %}
-
-{% for extension, commands in loadable() %}
-{% for command in commands %}
-    {{ command.name|ctx }} = NULL;
-{% endfor %}
-{% endfor %}
-{% endif %}
 }
 
 #endif /* GLAD_GLX */

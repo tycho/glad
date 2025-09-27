@@ -8,11 +8,7 @@ struct _glad_wgl_userptr {
     GLADwglprocaddrfunc wgl_get_proc_address_ptr;
 };
 
-{% if not options.mx %}
-static void* {{ template_utils.handle() }} = NULL;
-{% endif %}
-
-static void* glad_wgl_dlopen_handle({{ template_utils.context_arg(def='void') }}) {
+static void* glad_wgl_dlopen_handle({{ template_utils.context_arg() }}) {
 #if GLAD_PLATFORM_APPLE
     static const char *NAMES[] = {
         "../Frameworks/OpenGL.framework/OpenGL",
@@ -70,27 +66,26 @@ static GLADapiproc glad_wgl_get_proc(void *vuserptr, const char *name) {
     return result;
 }
 
-int gladLoaderLoadWGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}HDC hdc) {
+int gladLoaderLoadWGLContext({{ template_utils.context_arg(', ') }}HDC hdc) {
     int version = 0;
     void *handle;
     int did_load = 0;
     struct _glad_wgl_userptr userptr;
 
     did_load = {{ template_utils.handle() }} == NULL;
-    handle = glad_wgl_dlopen_handle({{ 'context' if options.mx }});
+    handle = glad_wgl_dlopen_handle(context);
     if (handle) {
         userptr = glad_wgl_build_userptr(handle);
 
-        version = gladLoadWGL{{ 'Context' if options.mx }}UserPtr({{ 'context, ' if options.mx }}hdc, glad_wgl_get_proc, &userptr);
+        version = gladLoadWGLContextUserPtr(context, hdc, glad_wgl_get_proc, &userptr);
 
         if (!version && did_load) {
-            gladLoaderUnloadWGL{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
+            gladLoaderUnloadWGLContext(context);
         }
     }
     return version;
 }
 
-{% if options.mx_global %}
 int gladLoaderLoadWGL(HDC hdc) {
     return gladLoaderLoadWGLContext(gladGet{{ feature_set.name|api }}Context(), hdc);
 }
@@ -98,45 +93,22 @@ int gladLoaderLoadWGL(HDC hdc) {
 void gladLoaderResetWGL(void) {
     gladLoaderResetWGLContext(gladGetWGLContext());
 }
-{% endif %}
 
-void gladLoaderUnloadWGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+void gladLoaderUnloadWGLContext({{ template_utils.context_arg() }}) {
     if ({{ template_utils.handle() }} != NULL) {
         glad_close_dlopen_handle({{ template_utils.handle() }});
         {{ template_utils.handle() }} = NULL;
     }
 
-{% if not options.mx %}
-    gladLoaderResetWGL();
-{% else %}
     gladLoaderResetWGLContext(context);
-{% endif %}
 }
 
-void gladLoaderResetWGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
-{% if options.mx %}
+void gladLoaderResetWGLContext({{ template_utils.context_arg() }}) {
     memset(context, 0, sizeof(GladWGLContext));
-{% else %}
-{% for feature in feature_set.features %}
-    GLAD_{{ feature.name }} = 0;
-{% endfor %}
-
-{% for extension in feature_set.extensions %}
-    GLAD_{{ extension.name }} = 0;
-{% endfor %}
-
-{% for extension, commands in loadable() %}
-{% for command in commands %}
-    {{ command.name|ctx }} = NULL;
-{% endfor %}
-{% endfor %}
-{% endif %}
 }
 
-{%if options.mx_global %}
 void gladLoaderUnloadWGL(void) {
     gladLoaderUnloadWGLContext(gladGet{{ feature_set.name|api }}Context());
 }
-{% endif %}
 
 #endif /* GLAD_WGL */

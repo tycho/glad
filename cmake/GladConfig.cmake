@@ -70,7 +70,7 @@ endfunction()
 
 # Calculate the argument and generated files for the "c" subparser for glad
 function(__glad_c_library CARGS CFILES)
-    cmake_parse_arguments(GGC "ALIAS;DEBUG;HEADERONLY;LOADER;MX;MXGLOBAL" "" "API" ${ARGN})
+    cmake_parse_arguments(GGC "ALIAS;DEBUG;HEADERONLY;LOADER" "" "API" ${ARGN})
 
     if(NOT GGC_API)
         message(FATAL_ERROR "Need API")
@@ -159,14 +159,6 @@ function(__glad_c_library CARGS CFILES)
 
     if(GGC_LOADER)
         list(APPEND GGC_ARGS "--loader")
-    endif()
-
-    if(GGC_MX)
-        list(APPEND GGC_ARGS "--mx")
-    endif()
-
-    if(GGC_MXGLOBAL)
-        list(APPEND GGC_ARGS "--mx-global")
     endif()
 
     set("${CARGS}" "${GGC_ARGS}" PARENT_SCOPE)

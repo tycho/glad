@@ -95,7 +95,7 @@ static GLADapiproc glad_gl_get_proc_from_userptr(void *userptr, const char* name
 
 {% for api in feature_set.info.apis %}
 {% if feature_set.extensions|length > 0 %}
-static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg(def='void') }}) {
+static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg() }}) {
 {% if feature_set.extensions|select('supports', api)|count > 0  %}
 {% if not (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
     static const uint16_t s_extIdx[] = {
@@ -107,7 +107,7 @@ static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     uint64_t *exts = NULL;
     uint32_t num_exts = 0;
     uint32_t i;
-    if (!glad_gl_get_extensions({{ 'context, ' if options.mx }}&exts, &num_exts)) return 0;
+    if (!glad_gl_get_extensions(context, &exts, &num_exts)) return 0;
 
 {# If the list is a consecutive 0 to N list, we can just scan the whole thing without emitting an array. #}
 {% if (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
@@ -123,9 +123,7 @@ static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg
     glad_gl_free_extensions(exts);
 
 {% else %}
-{%if options.mx %}
     GLAD_UNUSED(context);
-{% endif %}
     GLAD_UNUSED(glad_gl_get_extensions);
     GLAD_UNUSED(glad_gl_has_extension);
     GLAD_UNUSED(glad_gl_free_extensions);
@@ -135,7 +133,7 @@ static int glad_gl_find_extensions_{{ api|lower }}({{ template_utils.context_arg
 }
 
 {% endif %}
-static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='void') }}) {
+static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg() }}) {
     int i;
     const char* version;
     const char* prefixes[] = {
@@ -169,7 +167,7 @@ static int glad_gl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='
     return GLAD_MAKE_VERSION(major, minor);
 }
 
-GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void *userptr) {
+GLAD_NO_INLINE int gladLoad{{ api|api }}ContextUserPtr({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void *userptr) {
     int version;
 {% if options.use_pfn_ranges %}
     uint32_t i;
@@ -177,67 +175,60 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
 
     {{ 'glGetString'|ctx }} = (PFNGLGETSTRINGPROC) load(userptr, "glGetString");
     if({{ 'glGetString'|ctx }} == NULL) return 0;
-    version = glad_gl_find_core_{{ api|lower }}({{ 'context' if options.mx }});
+    version = glad_gl_find_core_{{ api|lower }}(context);
 
 {% if options.use_pfn_ranges %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_feature_pfn_ranges); ++i) {
         const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[i];
         if (context->featArray[range->extension]) {
-            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+            glad_{{ spec.name }}_load_pfn_range(context, load, userptr, range->start, range->count);
         }
     }
 {% else %}
 {% for feature, _ in loadable(feature_set.features, api=api) %}
-    glad_gl_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
+    glad_gl_load_{{ feature.name }}(context, load, userptr);
 {% endfor %}
 {% endif %}
 
 {% if feature_set.extensions|length > 0 %}
-    if (!glad_gl_find_extensions_{{ api|lower }}({{ 'context' if options.mx }})) return 0;
+    if (!glad_gl_find_extensions_{{ api|lower }}(context)) return 0;
 
 {% if options.use_pfn_ranges %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_pfn_ranges); ++i) {
         const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[i];
         if (context->extArray[range->extension]) {
-            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+            glad_{{ spec.name }}_load_pfn_range(context, load, userptr, range->start, range->count);
         }
     }
 {% else %}
 {% for extension, _ in loadable(feature_set.extensions, api=api) %}
-    glad_gl_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
+    glad_gl_load_{{ extension.name }}(context, load, userptr);
 {% endfor %}
 {% endif%}
 
 {% endif %}
-{% if options.mx_global %}
     gladSet{{ feature_set.name|api }}Context(context);
 
-{% endif %}
 {% if options.alias %}
-    glad_gl_resolve_aliases({{ 'context' if options.mx }});
+    glad_gl_resolve_aliases(context);
 
 {% endif %}
     return version;
 }
 
-{% if options.mx_global %}
 int gladLoad{{ api|api }}UserPtr(GLADuserptrloadfunc load, void *userptr) {
     return gladLoad{{ api|api }}ContextUserPtr(gladGet{{ feature_set.name|api }}Context(), load, userptr);
 }
 
-{% endif %}
-int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}GLADloadfunc load) {
-    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context, ' if options.mx }}glad_gl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
+int gladLoad{{ api|api }}Context({{ template_utils.context_arg(', ') }}GLADloadfunc load) {
+    return gladLoad{{ api|api }}ContextUserPtr(context, glad_gl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
 
-{% if options.mx_global %}
 int gladLoad{{ api|api }}(GLADloadfunc load) {
     return gladLoad{{ api|api }}Context(gladGet{{ feature_set.name|api }}Context(), load);
 }
 
-{% endif %}
 {% endfor %}
-{% if options.mx_global %}
 Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context() {
     return &{{ global_context }};
 }
@@ -247,6 +238,5 @@ void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Cont
     if (&{{ global_context }} == context) return;
     {{ global_context }} = *context;
 }
-{% endif %}
 
 {% endblock %}

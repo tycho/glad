@@ -89,12 +89,12 @@ ${GPP} example/c++/hellowindow2_macro.cpp -o ${TMP}/run -Ibuild/include -ldl -lg
 end
 
 start "hellowindow2_mx.c"
-${GLAD} --out-path="${TMP}" --api="gl:core" c --loader --mx
+${GLAD} --out-path="${TMP}" --api="gl:core" c --loader
 ${GPP} example/c++/hellowindow2_mx.cpp -o ${TMP}/run -Ibuild/include ${TMP}/src/*.c -ldl -lglfw && ${TMP}/run
 end
 
 start "multiwin_mx.c"
-${GLAD} --out-path="${TMP}" --api="gl:core" c --loader --mx
+${GLAD} --out-path="${TMP}" --api="gl:core" c --loader
 ${GPP} example/c++/multiwin_mx/multiwin_mx.cpp -o ${TMP}/run -Ibuild/include ${TMP}/src/*.c -ldl -lglfw && ${TMP}/run
 end
 

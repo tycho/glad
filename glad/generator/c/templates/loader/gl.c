@@ -24,11 +24,7 @@ static GLADapiproc glad_gl_get_proc(void *vuserptr, const char *name) {
     return result;
 }
 
-{% if not options.mx %}
-static void* {{ loader_handle }} = NULL;
-
-{% endif %}
-static void* glad_gl_dlopen_handle({{ template_utils.context_arg(def='void') }}) {
+static void* glad_gl_dlopen_handle({{ template_utils.context_arg() }}) {
 #if GLAD_PLATFORM_APPLE
     static const char *NAMES[] = {
         "../Frameworks/OpenGL.framework/OpenGL",
@@ -72,48 +68,31 @@ static struct _glad_gl_userptr glad_gl_build_userptr(void *handle) {
     return userptr;
 }
 
-int gladLoaderLoadGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+int gladLoaderLoadGLContext({{ template_utils.context_arg() }}) {
     int version = 0;
     void *handle;
     int did_load = 0;
     struct _glad_gl_userptr userptr;
 
     did_load = {{ loader_handle }} == NULL;
-    handle = glad_gl_dlopen_handle({{ 'context' if options.mx }});
+    handle = glad_gl_dlopen_handle(context);
     if (handle) {
         userptr = glad_gl_build_userptr(handle);
 
-        version = gladLoadGL{{ 'Context' if options.mx }}UserPtr({{ 'context, ' if options.mx }}glad_gl_get_proc, &userptr);
+        version = gladLoadGLContextUserPtr(context, glad_gl_get_proc, &userptr);
 
         if (!version && did_load) {
-            gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
+            gladLoaderUnloadGLContext(context);
         }
     }
 
     return version;
 }
 
-void gladLoaderResetGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
-{% if options.mx %}
+void gladLoaderResetGLContext({{ template_utils.context_arg() }}) {
     memset(context, 0, sizeof(GladGLContext));
-{% else %}
-{% for feature in feature_set.features %}
-    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = 0;
-{% endfor %}
-
-{% for extension in feature_set.extensions %}
-    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = 0;
-{% endfor %}
-
-{% for extension, commands in loadable() %}
-{% for command in commands %}
-    {{ command.name|ctx }} = NULL;
-{% endfor %}
-{% endfor %}
-{% endif %}
 }
 
-{% if options.mx_global %}
 void gladLoaderResetGL(void) {
     gladLoaderResetGLContext(gladGetGLContext());
 }
@@ -122,24 +101,17 @@ int gladLoaderLoadGL(void) {
     return gladLoaderLoadGLContext(gladGet{{ feature_set.name|api }}Context());
 }
 
-{% endif %}
-void gladLoaderUnloadGL{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+void gladLoaderUnloadGLContext({{ template_utils.context_arg() }}) {
     if ({{ loader_handle }} != NULL) {
         glad_close_dlopen_handle({{ loader_handle }});
         {{ loader_handle }} = NULL;
     }
 
-{% if not options.mx %}
-    gladLoaderResetGL();
-{% else %}
     gladLoaderResetGLContext(context);
-{% endif %}
 }
 
-{%if options.mx_global %}
 void gladLoaderUnloadGL(void) {
     gladLoaderUnloadGLContext(gladGet{{ feature_set.name|api }}Context());
 }
 
-{% endif %}
 #endif /* GLAD_GL */

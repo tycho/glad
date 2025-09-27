@@ -14,13 +14,6 @@
 {% block commands %}
 {% set blacklist = feature_set.features[0].get_requirements(spec, feature_set=feature_set).commands %}
 {{ template_utils.write_function_typedefs(feature_set.commands) }}
-{% if not options.mx %}
-#ifdef __INTELLISENSE__
-{{ template_utils.write_function_definitions(feature_set.commands|reject('existsin', blacklist)) }}
-#else
-{{ template_utils.write_function_declarations(feature_set.commands|reject('existsin', blacklist)) }}
-#endif
-{% else %}
 typedef struct Glad{{ feature_set.name|api }}Context {
     void* userptr;
 
@@ -58,7 +51,6 @@ typedef struct Glad{{ feature_set.name|api }}Context {
 {% endif %}
 } Glad{{ feature_set.name|api }}Context;
 
-{% if options.mx_global %}
 GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_context;
 
 {% for extension in chain(feature_set.features, feature_set.extensions) %}
@@ -72,9 +64,7 @@ GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_
 #define {{ command.name }} (glad_{{ feature_set.name }}_context.{{ command.name|no_prefix }})
 {% endfor %}
 #endif
-{% endif %}
 
-{% endif %}
 {% endblock %}{# commands #}
 {% block custom_declarations %}
 {% for api in feature_set.info.apis %}

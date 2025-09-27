@@ -29,12 +29,10 @@ typedef GLADapiproc (*GLADvkuserptrloadfunc)(void *userptr, const char *name, en
 typedef GLADapiproc (*GLADvkloadfunc)(const char *name, enum GLADcommandscope type);
 
 {% for api in feature_set.info.apis %}
-GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADvkuserptrloadfunc load, void *userptr);
-GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADvkloadfunc load);
+GLAD_API_CALL int gladLoad{{ api|api }}ContextUserPtr({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADvkuserptrloadfunc load, void *userptr);
+GLAD_API_CALL int gladLoad{{ api|api }}Context({{ template_utils.context_arg(', ') }}VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADvkloadfunc load);
 {% endfor %}
 
-{% if options.mx_global %}
 GLAD_API_CALL int gladLoad{{ feature_set.name|api }}UserPtr(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADvkuserptrloadfunc load, void *userptr);
 GLAD_API_CALL int gladLoad{{ feature_set.name|api }}(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device, GLADvkloadfunc load);
-{% endif %}
 {% endblock %}

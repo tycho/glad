@@ -1,7 +1,7 @@
 /*
  * No extensions compatibility GL MX header only
  *
- * GLAD: $GLAD --out-path=$tmp --api="gl:compatibility" --extensions="" c --loader --mx --mx-global --header-only
+ * GLAD: $GLAD --out-path=$tmp --api="gl:compatibility" --extensions="" c --loader --header-only
  * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl
  * RUN: $tmp/test
  */

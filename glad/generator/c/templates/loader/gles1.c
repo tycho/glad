@@ -25,11 +25,7 @@ static GLADapiproc glad_gles1_get_proc(void *vuserptr, const char* name) {
     return result;
 }
 
-{% if not options.mx %}
-static void* {{ loader_handle }} = NULL;
-{% endif %}
-
-static void* glad_gles1_dlopen_handle({{ template_utils.context_arg(def='void') }}) {
+static void* glad_gles1_dlopen_handle({{ template_utils.context_arg() }}) {
 #if GLAD_PLATFORM_APPLE
     static const char *NAMES[] = {"libGLESv1_CM.dylib"};
 #elif GLAD_PLATFORM_WIN32
@@ -52,7 +48,7 @@ static struct _glad_gles1_userptr glad_gles1_build_userptr(void *handle) {
     return userptr;
 }
 
-int gladLoaderLoadGLES1{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+int gladLoaderLoadGLES1Context({{ template_utils.context_arg() }}) {
     int version = 0;
     void *handle = NULL;
     int did_load = 0;
@@ -63,27 +59,25 @@ int gladLoaderLoadGLES1{{ 'Context' if options.mx }}({{ template_utils.context_a
     }
 
     did_load = {{ loader_handle }} == NULL;
-    handle = glad_gles1_dlopen_handle({{ 'context' if options.mx }});
+    handle = glad_gles1_dlopen_handle(context);
     if (handle != NULL) {
         userptr = glad_gles1_build_userptr(handle);
 
-        version = gladLoadGLES1{{ 'Context' if options.mx }}UserPtr({{ 'context, ' if options.mx }}glad_gles1_get_proc, &userptr);
+        version = gladLoadGLES1ContextUserPtr(context, glad_gles1_get_proc, &userptr);
 
         if (!version && did_load) {
-            gladLoaderUnloadGLES1{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
+            gladLoaderUnloadGLES1Context(context);
         }
     }
 
     return version;
 }
 
-{% if options.mx_global %}
 int gladLoaderLoadGLES1(void) {
     return gladLoaderLoadGLES1Context(gladGet{{ feature_set.name|api }}Context());
 }
-{% endif %}
 
-void gladLoaderUnloadGLES1{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+void gladLoaderUnloadGLES1Context({{ template_utils.context_arg() }}) {
     if ({{ loader_handle }} != NULL) {
         glad_close_dlopen_handle({{ loader_handle }});
         {{ loader_handle }} = NULL;

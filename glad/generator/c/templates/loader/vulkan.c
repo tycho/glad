@@ -36,11 +36,7 @@ static GLADapiproc glad_vulkan_get_proc(void *vuserptr, const char *name, enum G
     return (GLADapiproc) result;
 }
 
-{% if not options.mx %}
-static void* {{ loader_handle }} = NULL;
-
-{% endif %}
-static void* glad_vulkan_dlopen_handle({{ template_utils.context_arg(def='void') }}) {
+static void* glad_vulkan_dlopen_handle({{ template_utils.context_arg() }}) {
     static const char *NAMES[] = {
 #if GLAD_PLATFORM_APPLE
         "libvulkan.dylib",
@@ -71,80 +67,50 @@ static struct _glad_vulkan_userptr glad_vulkan_build_userptr(void *handle, VkIns
     return userptr;
 }
 
-int gladLoaderLoadVulkan{{ 'Context' if options.mx }}({{ template_utils.context_arg(',') }} VkInstance instance, VkPhysicalDevice physical_device, VkDevice device) {
+int gladLoaderLoadVulkanContext({{ template_utils.context_arg(',') }} VkInstance instance, VkPhysicalDevice physical_device, VkDevice device) {
     int version = 0;
     void *handle = NULL;
     int did_load = 0;
     struct _glad_vulkan_userptr userptr;
 
     did_load = {{ loader_handle }} == NULL;
-    handle = glad_vulkan_dlopen_handle({{ 'context' if options.mx }});
+    handle = glad_vulkan_dlopen_handle(context);
     if (handle != NULL) {
         userptr = glad_vulkan_build_userptr(handle, instance, device);
 
-        version = gladLoadVulkan{{ 'Context' if options.mx }}UserPtr({{ 'context,' if options.mx }}instance, physical_device, device, glad_vulkan_get_proc, &userptr);
+        version = gladLoadVulkanContextUserPtr(context,instance, physical_device, device, glad_vulkan_get_proc, &userptr);
 
         if (!version && did_load) {
-            gladLoaderUnloadVulkan{{ 'Context' if options.mx }}({{ 'context' if options.mx }});
+            gladLoaderUnloadVulkanContext(context);
         }
     }
 
     return version;
 }
 
-void gladLoaderResetVulkan{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
-{% if options.mx %}
+void gladLoaderResetVulkanContext({{ template_utils.context_arg() }}) {
     memset(context, 0, sizeof(GladVulkanContext));
-{% else %}
-{% for feature in feature_set.features %}
-    {{ ('GLAD_' + feature.name)|ctx(name_only=True) }} = 0;
-{% endfor %}
-
-{% for extension in feature_set.extensions %}
-{% call template_utils.protect(extension) %}
-    {{ ('GLAD_' + extension.name)|ctx(name_only=True) }} = 0;
-{% endcall %}
-{% endfor %}
-
-{% for extension, commands in loadable() %}
-{% for command in commands %}
-{% call template_utils.protect(command) %}
-    {{ command.name|ctx }} = NULL;
-{% endcall %}
-{% endfor %}
-{% endfor %}
-{% endif %}
 }
 
-{% if options.mx_global %}
 void gladLoaderResetVulkan(void) {
     gladLoaderResetVulkanContext(gladGetVulkanContext());
 }
-{% endif %}
 
-{% if options.mx_global %}
 int gladLoaderLoadVulkan(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device) {
     return gladLoaderLoadVulkanContext(gladGetVulkanContext(), instance, physical_device, device);
 }
-{% endif %}
 
-void gladLoaderUnloadVulkan{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }}) {
+void gladLoaderUnloadVulkanContext({{ template_utils.context_arg() }}) {
     if ({{ loader_handle }} != NULL) {
         glad_close_dlopen_handle({{ loader_handle }});
         {{ loader_handle }} = NULL;
     }
 
-{% if not options.mx %}
-    gladLoaderResetVulkan();
-{% else %}
     gladLoaderResetVulkanContext(context);
-{% endif %}
 }
 
-{% if options.mx_global %}
 void gladLoaderUnloadVulkan(void) {
     gladLoaderUnloadVulkanContext(gladGetVulkanContext());
 }
-{% endif %}
 
 #endif /* GLAD_VULKAN */

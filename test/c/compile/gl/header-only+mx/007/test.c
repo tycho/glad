@@ -1,7 +1,7 @@
 /*
  * MX header only, global generation, should compile basic API
  *
- * GLAD: $GLAD --out-path=$tmp --api="gl:compatibility" c --loader --mx --mx-global --header-only
+ * GLAD: $GLAD --out-path=$tmp --api="gl:compatibility" c --loader --header-only
  * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl
  * RUN: $tmp/test
  */

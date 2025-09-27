@@ -6,14 +6,13 @@
 #endif
 #}
 
-GLAD_API_CALL int gladLoaderLoadGLES2{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }});
-GLAD_API_CALL void gladLoaderUnloadGLES2{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }});
-GLAD_API_CALL void gladLoaderResetGLES2{{ 'Context' if options.mx }}({{ template_utils.context_arg(def='void') }});
-{% if options.mx_global %}
+GLAD_API_CALL int gladLoaderLoadGLES2Context({{ template_utils.context_arg() }});
+GLAD_API_CALL void gladLoaderUnloadGLES2Context({{ template_utils.context_arg() }});
+GLAD_API_CALL void gladLoaderResetGLES2Context({{ template_utils.context_arg() }});
+
 GLAD_API_CALL int gladLoaderLoadGLES2(void);
 GLAD_API_CALL void gladLoaderUnloadGLES2(void);
 GLAD_API_CALL void gladLoaderResetGLES2(void);
-{% endif %}
 
 #endif /* GLAD_GLES2 */
 

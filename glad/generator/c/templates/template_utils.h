@@ -6,12 +6,12 @@
 {% endmacro %}
 
 
-{% macro context_arg(suffix='', def='') -%}
-{{ 'Glad' + feature_set.name|api + 'Context *context' + suffix if options.mx else def }}
+{% macro context_arg(suffix='') -%}
+{{ 'Glad' + feature_set.name|api + 'Context *context' + suffix }}
 {%- endmacro %}
 
 {% macro handle(api_name) -%}
-{{ 'context->glad' if options.mx else '_glad_' + api_name|api }}_loader_handle
+{{ 'context->glad' }}_loader_handle
 {%- endmacro %}
 
 
@@ -41,13 +41,10 @@
 {% endmacro %}
 
 
-{% macro write_feature_information(extensions, with_runtime=True) %}
+{% macro write_feature_information(extensions) %}
 {% for extension in extensions %}
 {% call protect(extension) %}
 #define {{ extension.name }} 1
-{% if with_runtime %}
-GLAD_API_CALL int GLAD_{{ extension.name }};
-{% endif %}
 {% endcall %}
 {% endfor %}
 {% endmacro %}

@@ -61,20 +61,13 @@ extern "C" {
 {{ template_utils.write_types(feature_set.types) }}
 {% endblock %}
 {% block feature_information %}
-{{ template_utils.write_feature_information(chain(feature_set.features, feature_set.extensions), with_runtime=not options.mx) }}
+{{ template_utils.write_feature_information(chain(feature_set.features, feature_set.extensions)) }}
 {% endblock %}
 {% block beforecommands %}
 {% endblock %}
 {% block commands %}
 
 {{ template_utils.write_function_typedefs(feature_set.commands) }}
-{% if not options.mx %}
-#ifdef __INTELLISENSE__
-{{ template_utils.write_function_definitions(feature_set.commands) }}
-#else
-{{ template_utils.write_function_declarations(feature_set.commands) }}
-#endif
-{% else %}
 typedef struct Glad{{ feature_set.name|api }}Context {
     void* userptr;
 
@@ -114,7 +107,6 @@ typedef struct Glad{{ feature_set.name|api }}Context {
 {% endblock %}
 } Glad{{ feature_set.name|api }}Context;
 
-{% if options.mx_global %}
 GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_context;
 
 {% for extension in chain(feature_set.features, feature_set.extensions) %}
@@ -128,16 +120,12 @@ GLAD_API_CALL Glad{{ feature_set.name|api }}Context glad_{{ feature_set.name }}_
 #define {{ command.name }} (glad_{{ feature_set.name }}_context.{{ command.name|no_prefix }})
 {% endfor %}
 #endif
-{% endif %}
 
-{% endif %}
 {% endblock %}
 
 {% block declarations %}
-{% if options.mx_global %}
 GLAD_API_CALL Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context(void);
 GLAD_API_CALL void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Context *context);
-{% endif %}
 {% endblock %}
 
 {% block custom_declarations %}

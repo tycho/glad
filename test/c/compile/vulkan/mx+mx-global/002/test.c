@@ -1,7 +1,7 @@
 /*
  * Full vulkan without extensions, mx
  *
- * GLAD: $GLAD --out-path=$tmp --api="vulkan" --extensions="" c --loader --mx --mx-global
+ * GLAD: $GLAD --out-path=$tmp --api="vulkan" --extensions="" c --loader
  * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/vulkan.c -ldl -g
  * RUN: $tmp/test
  */

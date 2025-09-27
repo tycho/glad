@@ -1,7 +1,7 @@
 /*
  * Full core GL MX
  *
- * GLAD: $GLAD --out-path=$tmp --api="gl:core" c --loader --mx --mx-global
+ * GLAD: $GLAD --out-path=$tmp --api="gl:core" c --loader
  * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: $tmp/test
  */

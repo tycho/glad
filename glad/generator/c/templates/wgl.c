@@ -90,7 +90,7 @@ static int glad_wgl_find_extensions_{{ api|lower }}({{ template_utils.context_ar
     uint64_t *exts = NULL;
     uint32_t num_exts = 0;
     uint32_t i;
-    if (!glad_wgl_get_extensions({{ 'context, ' if options.mx }}hdc, &exts, &num_exts)) return 0;
+    if (!glad_wgl_get_extensions(context, hdc, &exts, &num_exts)) return 0;
 
 {# If the list is a consecutive 0 to N list, we can just scan the whole thing without emitting an array. #}
 {% if (feature_set.extensions|select('supports', api))|index_consecutive_0_to_N %}
@@ -106,9 +106,7 @@ static int glad_wgl_find_extensions_{{ api|lower }}({{ template_utils.context_ar
     glad_wgl_free_extensions(exts);
 
 {% else %}
-{%if options.mx %}
     GLAD_UNUSED(context);
-{% endif %}
     GLAD_UNUSED(glad_wgl_get_extensions);
     GLAD_UNUSED(glad_wgl_has_extension);
     GLAD_UNUSED(glad_wgl_free_extensions);
@@ -117,7 +115,7 @@ static int glad_wgl_find_extensions_{{ api|lower }}({{ template_utils.context_ar
     return 1;
 }
 
-static int glad_wgl_find_core_{{ api|lower }}({{ template_utils.context_arg(def='void') }}) {
+static int glad_wgl_find_core_{{ api|lower }}({{ template_utils.context_arg() }}) {
     {% set hv = feature_set.features|select('supports', api)|list|last %}
     int major = {{ hv.version.major }}, minor = {{ hv.version.minor }};
 {% for feature in feature_set.features|select('supports', api) %}
@@ -126,7 +124,7 @@ static int glad_wgl_find_core_{{ api|lower }}({{ template_utils.context_arg(def=
     return GLAD_MAKE_VERSION(major, minor);
 }
 
-GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}HDC hdc, GLADuserptrloadfunc load, void *userptr) {
+GLAD_NO_INLINE int gladLoad{{ api|api }}ContextUserPtr({{ template_utils.context_arg(', ') }}HDC hdc, GLADuserptrloadfunc load, void *userptr) {
     int version;
 {% if options.use_pfn_ranges %}
     uint32_t i;
@@ -135,60 +133,55 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ 
     {{ 'GLAD_wglGetExtensionsStringARB'|ctx }} = (PFNWGLGETEXTENSIONSSTRINGARBPROC) load(userptr, "wglGetExtensionsStringARB");
     {{ 'GLAD_wglGetExtensionsStringEXT'|ctx }} = (PFNWGLGETEXTENSIONSSTRINGEXTPROC) load(userptr, "wglGetExtensionsStringEXT");
     if({{ 'GLAD_wglGetExtensionsStringARB'|ctx }} == NULL && {{ 'GLAD_wglGetExtensionsStringEXT'|ctx }} == NULL) return 0;
-    version = glad_wgl_find_core_{{ api|lower }}({{'context' if options.mx }});
+    version = glad_wgl_find_core_{{ api|lower }}(context);
 
 {% if options.use_pfn_ranges %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_feature_pfn_ranges); ++i) {
         const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[i];
         if (context->featArray[range->extension]) {
-            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+            glad_{{ spec.name }}_load_pfn_range(context, load, userptr, range->start, range->count);
         }
     }
 {% else %}
 {% for feature, _ in loadable(feature_set.features, api=api) %}
-    glad_wgl_load_{{ feature.name }}({{'context, ' if options.mx }}load, userptr);
+    glad_wgl_load_{{ feature.name }}(context, load, userptr);
 {% endfor %}
 {% endif %}
 
-    if (!glad_wgl_find_extensions_{{ api|lower }}({{'context, ' if options.mx }}hdc)) return 0;
+    if (!glad_wgl_find_extensions_{{ api|lower }}(context, hdc)) return 0;
 
 {% if options.use_pfn_ranges %}
     for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_pfn_ranges); ++i) {
         const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[i];
         if (context->extArray[range->extension]) {
-            glad_{{ spec.name }}_load_pfn_range({{'context, ' if options.mx }}load, userptr, range->start, range->count);
+            glad_{{ spec.name }}_load_pfn_range(context, load, userptr, range->start, range->count);
         }
     }
 {% else %}
 {% for extension, _ in loadable(feature_set.extensions, api=api) %}
-    glad_wgl_load_{{ extension.name }}({{'context, ' if options.mx }}load, userptr);
+    glad_wgl_load_{{ extension.name }}(context, load, userptr);
 {% endfor %}
 {% endif%}
 
 {% if options.alias %}
-    glad_wgl_resolve_aliases({{'context' if options.mx }});
+    glad_wgl_resolve_aliases(context);
 {% endif %}
 
     return version;
 }
 
-{% if options.mx_global %}
 int gladLoad{{ api|api }}UserPtr(HDC hdc, GLADuserptrloadfunc load, void *userptr) {
     return gladLoad{{ api|api }}ContextUserPtr(gladGet{{ feature_set.name|api }}Context(), hdc, load, userptr);
 }
-{% endif %}
 
-int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}HDC hdc, GLADloadfunc load) {
-    return gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{'context,' if options.mx }} hdc, glad_wgl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
+int gladLoad{{ api|api }}Context({{ template_utils.context_arg(', ') }}HDC hdc, GLADloadfunc load) {
+    return gladLoad{{ api|api }}ContextUserPtr(context, hdc, glad_wgl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
 
-{% if options.mx_global %}
 int gladLoad{{ api|api }}(HDC hdc, GLADloadfunc load) {
     return gladLoad{{ api|api }}Context(gladGet{{ feature_set.name|api }}Context(), hdc, load);
 }
-{% endif %}
 
-{% if options.mx_global %}
 Glad{{ feature_set.name|api }}Context* gladGet{{ feature_set.name|api }}Context() {
     return &{{ global_context }};
 }
@@ -198,7 +191,7 @@ void gladSet{{ feature_set.name|api }}Context(Glad{{ feature_set.name|api }}Cont
     if (&{{ global_context }} == context) return;
     {{ global_context }} = *context;
 }
-{% endif %}
+
 {% endfor %}
 {% endblock %}
 {% block postimpl %}

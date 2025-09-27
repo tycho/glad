@@ -17,13 +17,11 @@
 
 {% block custom_declarations %}
 {% for api in feature_set.info.apis %}
-GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}UserPtr({{ template_utils.context_arg(', ') }}Display *display, int screen, GLADuserptrloadfunc load, void *userptr);
-GLAD_API_CALL int gladLoad{{ api|api }}{{ 'Context' if options.mx }}({{ template_utils.context_arg(', ') }}Display *display, int screen, GLADloadfunc load);
+GLAD_API_CALL int gladLoad{{ api|api }}ContextUserPtr({{ template_utils.context_arg(', ') }}Display *display, int screen, GLADuserptrloadfunc load, void *userptr);
+GLAD_API_CALL int gladLoad{{ api|api }}Context({{ template_utils.context_arg(', ') }}Display *display, int screen, GLADloadfunc load);
 
-{% if options.mx_global %}
 GLAD_API_CALL int gladLoad{{ api|api }}UserPtr(Display *display, int screen, GLADuserptrloadfunc load, void *userptr);
 GLAD_API_CALL int gladLoad{{ api|api }}(Display *display, int screen, GLADloadfunc load);
-{% endif %}
 {% endfor %}
 {% endblock %}
 

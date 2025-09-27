@@ -193,21 +193,15 @@ def is_void(t):
 def ctx(jinja_context, name, context='context', raw=False, name_only=False, member=False):
     options = jinja_context['options']
 
-    prefix = 'glad_'
-    if options['mx']:
-        prefix = context + '->'
-        if name.startswith('GLAD_'):
-            name = name[5:]
+    prefix = context + '->'
+    if name.startswith('GLAD_'):
+        name = name[5:]
 
-        if not raw:
-            name = strip_specification_prefix(name, jinja_context['spec'])
+    if not raw:
+        name = strip_specification_prefix(name, jinja_context['spec'])
 
-    # it's a mx struct member
+    # it's a struct member
     if member:
-        return name
-
-    # you won't the name, only when we're not mx
-    if name_only and not options['mx']:
         return name
 
     return prefix + name
@@ -291,18 +285,6 @@ class CConfig(Config):
         default=False,
         description='Enables function pointer aliasing'
     )
-    MX = ConfigOption(
-        force_true=True,
-        converter=bool,
-        default=False,
-        description='Enables support for multiple GL contexts'
-    )
-    MX_GLOBAL = ConfigOption(
-        force_true=True,
-        converter=bool,
-        default=False,
-        description='Mimic global GL functions with context switching'
-    )
     HEADER_ONLY = ConfigOption(
         converter=bool,
         default=False,
@@ -318,10 +300,6 @@ class CConfig(Config):
         default=False,
         description='Enable use of PFN ranges instead of PFN lists (smaller code size)'
     )
-
-    __constraints__ = [
-        RequirementConstraint(['MX_GLOBAL'], 'MX'),
-    ]
 
 
 class CGenerator(JinjaGenerator):
