@@ -151,8 +151,8 @@ GLAD_NO_INLINE int gladLoad{{ api|api }}ContextUserPtr({{ template_utils.context
     if (!glad_wgl_find_extensions_{{ api|lower }}(context, hdc)) return 0;
 
 {% if options.use_pfn_ranges %}
-    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ feature_set.name|api }}_ext_pfn_ranges); ++i) {
-        const GladPfnRange_t *range = &GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[i];
+    for (i = 0; i < GLAD_ARRAYSIZE(GLAD_{{ api|lower }}_ext_pfn_ranges); ++i) {
+        const GladPfnRange_t *range = &GLAD_{{ api|lower }}_ext_pfn_ranges[i];
         if (context->extArray[range->extension]) {
             glad_{{ spec.name }}_load_pfn_range(context, load, userptr, range->start, range->count);
         }

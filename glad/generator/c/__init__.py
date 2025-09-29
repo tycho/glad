@@ -136,7 +136,7 @@ def extension_ranges(context, extensions=None, api=None):
 
     for extension in feature_set.extensions:
         if api is None or extension.supports(api):
-            commands = extension.get_requirements(spec, feature_set=feature_set).commands
+            commands = extension.get_requirements(spec, api=api, feature_set=feature_set).commands
             if commands:
                 ranges = find_contiguous_ranges(commands)
                 yield extension, ranges

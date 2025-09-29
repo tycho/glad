@@ -79,8 +79,9 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_feature_pfn_ranges[]
 };
 
 {% if feature_set.extensions|length > 0 %}
-static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
-{% for extension, command_ranges in extension_ranges() %}
+{% for api in feature_set.info.apis %}
+static const GladPfnRange_t GLAD_{{ api|lower }}_ext_pfn_ranges[] = {
+{% for extension, command_ranges in extension_ranges(api=api) %}
 {% call template_utils.protect(extension) %}
 {% for cmd_range in command_ranges %}
     { {{ "{:>4}".format(extension.index) }}, {{ "{:>4}".format(cmd_range.start) }}, {{ "{:>4}".format(cmd_range.count) }} }, /* {{ extension.name }} */
@@ -88,6 +89,7 @@ static const GladPfnRange_t GLAD_{{ feature_set.name|api }}_ext_pfn_ranges[] = {
 {% endcall %}
 {% endfor %}
 };
+{% endfor %}
 
 {% endif %}
 {% endif %}
