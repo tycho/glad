@@ -18,8 +18,10 @@
 #include <arm_neon.h>
 #endif
 
+#ifndef GLAD_EXTERNAL_XXHASH
 #define XXH_INLINE_ALL
 #define XXH_NO_STREAM
+#endif
 #include "xxhash.h"
 
 {% endif %}
