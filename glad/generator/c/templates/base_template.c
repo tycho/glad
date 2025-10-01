@@ -91,8 +91,8 @@ static const GladPfnRange_t GLAD_{{ api|lower }}_ext_pfn_ranges[] = {
 {% endcall %}
 {% endfor %}
 };
-{% endfor %}
 
+{% endfor %}
 {% endif %}
 {% endif %}
 {% endblock %}
@@ -105,53 +105,26 @@ static const uint64_t GLAD_{{ feature_set.name|api }}_ext_hashes[] = {
     /* {{ "{:>4}".format(extension.index)}} */ {{ extension.hash }}ULL{% if not loop.last %},{% else %} {% endif %} /* {{ extension.name }} */
 {% endfor %}
 };
-{% endif %}
-{% endblock %}
-{% block pfn_loader %}
-{% if options.use_pfn_ranges %}
-static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
-{
-    uint32_t pfnIdx;
 
-    for (pfnIdx = pfnStart; pfnIdx < pfnStart + numPfns; ++pfnIdx) {
-        context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
-    }
-}
-
-{% else  %}
-static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, const uint16_t *pPfnIdx, uint32_t numPfns)
-{
-    uint32_t i;
-
-    for (i = 0; i < numPfns; ++i) {
-        const uint16_t pfnIdx = pPfnIdx[i];
-        context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
-    }
-}
-
-{% endif %}
-{% endblock %}
-{% block extension_loaders %}
-{% if not options.use_pfn_ranges %}
-{% for extension, commands in loadable() %}
-{% call template_utils.protect(extension) %}
-static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr) {
-    static const uint16_t s_pfnIdx[] = {
-{% for command in commands|sort(attribute='index') %}
-        {{ "{:>4}".format(command.index) }}{% if not loop.last %},{% else %} {% endif %} /* {{ command.name }} */
-{% endfor %}
-    };
-    if (!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
-    glad_{{ spec.name }}_load_pfns(context, load, userptr, s_pfnIdx, GLAD_ARRAYSIZE(s_pfnIdx));
-}
-
-{% endcall %}
-{% endfor %}
 {% endif %}
 {% endblock %}
 {% block aliasing %}
 {% if options.alias %}
 {% if aliases|length > 0 %}
+static const GladAliasPair_t GLAD_{{ feature_set.name|api }}_command_aliases[] = {
+{% for command in feature_set.commands|sort(attribute='name') %}
+{% if aliases.get(command.name, [])|length > 0 %}
+{% call template_utils.protect(command) %}
+{% for alias in aliases.get(command.name, [])|reject('equalto', (command.name, command.index)) %}
+{% call template_utils.protect(alias) %}
+    { {{ "{:>4}".format(command.index) }}, {{ "{:>4}".format(alias[1]) }} }, /* {{ command.name }} and {{ alias[0] }} */
+{% endcall %}
+{% endfor %}
+{% endcall %}
+{% endif %}
+{% endfor %}
+};
+
 static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.context_arg(', ') }}const GladAliasPair_t *pairs, uint32_t start_idx, uint32_t total_count) {
     void **pfnArray = context->pfnArray;
     void *canonical_ptr;
@@ -187,20 +160,6 @@ static uint32_t glad_{{ spec.name }}_resolve_alias_group({{  template_utils.cont
     return end_idx - 1;  /* Return index of last processed pair */
 }
 
-static const GladAliasPair_t GLAD_{{ feature_set.name|api }}_command_aliases[] = {
-{% for command in feature_set.commands|sort(attribute='name') %}
-{% if aliases.get(command.name, [])|length > 0 %}
-{% call template_utils.protect(command) %}
-{% for alias in aliases.get(command.name, [])|reject('equalto', (command.name, command.index)) %}
-{% call template_utils.protect(alias) %}
-    { {{ "{:>4}".format(command.index) }}, {{ "{:>4}".format(alias[1]) }} }, /* {{ command.name }} and {{ alias[0] }} */
-{% endcall %}
-{% endfor %}
-{% endcall %}
-{% endif %}
-{% endfor %}
-};
-
 {% endif %}
 GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_utils.context_arg() }}) {
 {%if aliases|length > 0 %}
@@ -214,6 +173,48 @@ GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_util
 {% endif %}
 }
 
+{% endif %}
+{% endblock %}
+{% block pfn_loader %}
+{% if options.use_pfn_ranges %}
+static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, uint16_t pfnStart, uint32_t numPfns)
+{
+    uint32_t pfnIdx;
+
+    for (pfnIdx = pfnStart; pfnIdx < pfnStart + numPfns; ++pfnIdx) {
+        context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+    }
+}
+
+{% else %}
+static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr, const uint16_t *pPfnIdx, uint32_t numPfns)
+{
+    uint32_t i;
+
+    for (i = 0; i < numPfns; ++i) {
+        const uint16_t pfnIdx = pPfnIdx[i];
+        context->pfnArray[pfnIdx] = (void *)load(userptr, GLAD_{{ feature_set.name|api}}_fn_names[pfnIdx]);
+    }
+}
+
+{% endif %}
+{% endblock %}
+{% block extension_loaders %}
+{% if not options.use_pfn_ranges %}
+{% for extension, commands in loadable() %}
+{% call template_utils.protect(extension) %}
+static void glad_{{ spec.name }}_load_{{ extension.name }}({{ template_utils.context_arg(', ') }}GLADuserptrloadfunc load, void* userptr) {
+    static const uint16_t s_pfnIdx[] = {
+{% for command in commands|sort(attribute='index') %}
+        {{ "{:>4}".format(command.index) }}{% if not loop.last %},{% else %} {% endif %} /* {{ command.name }} */
+{% endfor %}
+    };
+    if (!{{ ('GLAD_' + extension.name)|ctx(name_only=True) }}) return;
+    glad_{{ spec.name }}_load_pfns(context, load, userptr, s_pfnIdx, GLAD_ARRAYSIZE(s_pfnIdx));
+}
+
+{% endcall %}
+{% endfor %}
 {% endif %}
 {% endblock %}
 {% block loader %}

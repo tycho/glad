@@ -23,6 +23,7 @@ static void glad_{{ spec.name }}_load_pfn_range({{ template_utils.context_arg(',
         context->pfnArray[pfnIdx] = (void *)load(userptr, name, scope);
     }
 }
+
 {% else  %}
 static void glad_{{ spec.name }}_load_pfns({{ template_utils.context_arg(', ') }}GLADvkuserptrloadfunc load, void* userptr, const uint16_t *pPfnIdx, uint32_t numPfns)
 {
