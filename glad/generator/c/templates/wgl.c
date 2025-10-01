@@ -60,7 +60,7 @@ static int glad_wgl_get_extensions({{ template_utils.context_arg(', ') }}HDC hdc
 
 {% if search_type == 0 %}
     /* Sort extension list for binary search */
-    qsort(exts, num_exts, sizeof(uint64_t), compare_uint64);
+    glad_sort_hashes(exts, num_exts);
 
 {% endif %}
     *out_num_exts = num_exts;

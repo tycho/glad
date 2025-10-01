@@ -29,13 +29,30 @@ GLAD_NO_INLINE static bool glad_hash_search(const uint64_t *arr, uint32_t size, 
     return false;
 }
 
-GLAD_NO_INLINE static int compare_uint64(const void *pA, const void *pB)
-{
-    uint64_t a = *(const uint64_t *)pA;
-    uint64_t b = *(const uint64_t *)pB;
-    if (a > b)      return 1;
-    else if (a < b) return -1;
-    else            return 0;
+GLAD_NO_INLINE static void glad_sort_hashes(uint64_t *a, size_t n) {
+    /* Ciura gap sequence; we’ll skip the big ones at runtime. */
+    static const size_t gaps[] = {701, 301, 132, 57, 23, 10, 4, 1};
+    size_t gi = 0;
+
+    if (!a || n < 2)
+        return;
+
+    while (gi < GLAD_ARRAYSIZE(gaps) && gaps[gi] >= n)
+        gi++;
+
+    for (; gi < GLAD_ARRAYSIZE(gaps); ++gi) {
+        size_t gap = gaps[gi], i;
+        for (i = gap; i < n; ++i) {
+            uint64_t v = a[i];
+            size_t j = i;
+            /* gapped insertion sort */
+            while (j >= gap && a[j - gap] > v) {
+                a[j] = a[j - gap];
+                j -= gap;
+            }
+            a[j] = v;
+        }
+    }
 }
 
 {% endif %}

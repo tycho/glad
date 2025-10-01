@@ -211,6 +211,7 @@ GLAD_NO_INLINE static void glad_{{ spec.name }}_resolve_aliases({{ template_util
     GLAD_UNUSED(context);
 {% endif %}
 }
+
 {% endif %}
 {% endblock %}
 {% block loader %}

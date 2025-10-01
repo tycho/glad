@@ -63,7 +63,8 @@ static int glad_egl_get_extensions({{ template_utils.context_arg(', ') }}EGLDisp
     free(concat);
 
 {% if search_type == 0 %}
-    qsort(exts, num_exts, sizeof(uint64_t), compare_uint64);
+    /* Sort extension list for binary search */
+    glad_sort_hashes(exts, num_exts);
 
 {% endif %}
     *out_exts = exts;
