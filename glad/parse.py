@@ -896,6 +896,8 @@ class Type(IdentifiedByName):
 
         self._raw = raw
 
+        assert self.api is None or ',' not in self.api
+
     @classmethod
     def factory(cls, element, name, data):
         return [cls(name, **data)]
@@ -1093,6 +1095,8 @@ class Member(IdentifiedByName):
         self.api = api
         self.enum = enum
 
+        assert self.api is None or ',' not in self.api
+
     @classmethod
     def from_element(cls, element):
         type_ = ParsedType.from_element(element)
@@ -1149,6 +1153,8 @@ class Enum(IdentifiedByName):
         self.parent_type = parent_type
 
         self.extended_by = set(extended_by) if extended_by else set()
+
+        assert self.api is None or ',' not in self.api
 
     @property
     def expanded_name(self):
@@ -1213,6 +1219,8 @@ class Command(IdentifiedByName):
         self.proto = proto
         self.params = params
         self.alias = alias
+
+        assert self.api is None or ',' not in self.api
 
         if self.alias is None and self.proto is None:
             raise ValueError("command is neither a full command nor an alias")
@@ -1290,6 +1298,8 @@ class Param(object):
         self.type = ParsedType.from_element(element)
         self.name = element.find('name').text.strip('*')
         self.api = element.get('api')
+
+        assert self.api is None or ',' not in self.api
 
     def is_equivalent(self, other):
         return self.type == other.type
@@ -1388,6 +1398,8 @@ class Require(object):
 
         self.comment = comment
 
+        assert self.api is None or ',' not in self.api
+
     def is_equivalent(self, other):
         return self.requirements == other.requirements
 
@@ -1404,6 +1416,8 @@ class Remove(object):
         self.profile = element.get('profile')
 
         self.removes = [child.get('name') for child in element]
+
+        assert self.api is None or ',' not in self.api
 
     def is_equivalent(self, other):
         return self.removes == other.removes
