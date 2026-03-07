@@ -21,6 +21,7 @@ pub type EGLDisplay = *mut std::os::raw::c_void;
 pub type EGLImage = *mut std::os::raw::c_void;
 pub type EGLImageKHR = *mut std::os::raw::c_void;
 pub type EGLLabelKHR = *mut std::os::raw::c_void;
+pub type EGLLowLatencyCapsANGLE = *mut std::os::raw::c_uint;
 pub type EGLObjectKHR = *mut std::os::raw::c_void;
 pub type EGLOutputLayerEXT = *mut std::os::raw::c_void;
 pub type EGLOutputPortEXT = *mut std::os::raw::c_void;
