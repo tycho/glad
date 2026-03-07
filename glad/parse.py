@@ -39,6 +39,15 @@ logger = logging.getLogger(__name__)
 
 _ARRAY_RE = re.compile(r'\[(\d+)\]')
 
+def _api_matches(element_api, requested_api):
+    """
+    Returns True if element_api covers requested_api.
+    element_api may be None (applies to all APIs), a single API name,
+    or a comma-delimited list (e.g. 'vulkan,vulkanbase').
+    """
+    if element_api is None:
+        return True
+    return requested_api in element_api.split(',')
 
 class FeatureSetInfo(object):
     class InfoItem(namedtuple('InfoItem', ['api', 'version', 'profile', 'identifier'])):
@@ -268,7 +277,7 @@ class Specification(object):
         :return: a requirement or None
         """
         requirements = [name for name, types in self.types.items()
-                        if any(t.api in (None, api) for t in types)]
+                        if any(_api_matches(t.api, api) for t in types)]
 
         return Require(api, profile, requirements)
 
@@ -354,7 +363,11 @@ class Specification(object):
     def types(self):
         types = OrderedDict()
         for element in filter(lambda e: e.tag == 'type', iter(self.root.find('types'))):
-            name = element.get('name') or element.find('name').text
+            name_elem = element.find('name') or element.find('.//name')
+            name = element.get('name') or (name_elem.text if name_elem is not None else None)
+
+            if name is None:
+                logger.warning('skipping type element with no discernible name: {}'.format(element.attrib))
 
             if element.get('category') != 'enum':
                 types.setdefault(name, list()).extend(Type.from_element(element))
@@ -420,7 +433,8 @@ class Specification(object):
                                 raise ValueError('extension enum {} required multiple times '
                                                  'with different values'.format(e.name))
 
-                        enums[enum.name].also_extended_by(extension.attrib['name'])
+                        if extension.get('apitype') != 'internal':
+                            enums[enum.name].also_extended_by(extension.attrib['name'])
 
                 t.enums = list(enums.values())
 
@@ -519,10 +533,30 @@ class Specification(object):
     @memoize(method=True)
     def features(self):
         features = defaultdict(dict)
+
+        # First pass: collect public features only
         for element in self.root.iterfind('feature'):
+            if element.get('apitype') == 'internal':
+                continue
             num = Version(*map(int, element.attrib['number'].split('.')))
             for api in element.attrib['api'].split(','):
                 features[api][num] = Feature.from_element(element)
+
+        # Second pass: merge internal feature <require> blocks into their
+        # corresponding public features (same api + version). This mirrors
+        # what Khronos's reg.py does -- internal features partition the API
+        # for VulkanBase bookkeeping but their requirements still belong to
+        # the public Vulkan API.
+        for element in self.root.iterfind('feature'):
+            if element.get('apitype') != 'internal':
+                continue
+            num = Version(*map(int, element.attrib['number'].split('.')))
+            for api in element.attrib['api'].split(','):
+                if api not in features or num not in features[api]:
+                    continue
+                public_feature = features[api][num]
+                for require_elem in element.findall('require'):
+                    public_feature.requires.append(Require.from_element(require_elem))
 
         for api, api_features in features.items():
             features[api] = OrderedDict(sorted(api_features.items(), key=lambda x: x[0]))
@@ -631,7 +665,7 @@ class Specification(object):
                 best_match = None
                 for result in results:
                     # no match so far and result is a match
-                    if best_match is None and (result.api is None or result.api == api):
+                    if best_match is None and _api_matches(result.api, api):
                         best_match = result
                         continue
 
@@ -896,8 +930,6 @@ class Type(IdentifiedByName):
 
         self._raw = raw
 
-        assert self.api is None or ',' not in self.api
-
     @classmethod
     def factory(cls, element, name, data):
         return [cls(name, **data)]
@@ -912,7 +944,8 @@ class Type(IdentifiedByName):
         raw = ''.join(element.itertext())
         api = element.get('api')
         category = element.get('category')
-        name = element.get('name') or element.find('name').text
+        name_elem = element.find('name') or element.find('.//name')
+        name = element.get('name') or (name_elem.text if name_elem is not None else None)
 
         alias = element.get('alias')
         parent = element.get('parent')
@@ -934,6 +967,16 @@ class Type(IdentifiedByName):
         )
 
         factory = Type._FACTORIES.get(category, Type.factory)
+
+        # Expand comma-delimited api into one Type variant per API
+        if data.get('api') and ',' in data['api']:
+            result = []
+            for a in data['api'].split(','):
+                d = dict(data)
+                d['api'] = a.strip()
+                result.extend(factory(element, name, d))
+            return result
+
         return factory(element, name, data)
 
     def is_equivalent(self, other):
@@ -968,18 +1011,36 @@ class FuncPointerType(Type):
 
     @classmethod
     def factory(cls, element, name, data):
+        proto_element = element.find('proto')
+        if proto_element is not None:
+            # New structured format (VulkanBase era): <proto> and <param> children,
+            # analogous to <command> elements.
+            type_elem = proto_element.find('type')
+            ret = type_elem.text.strip() if type_elem is not None else 'void'
+
+            parameters = []
+            for param_elem in element.findall('param'):
+                pname_elem = param_elem.find('name')
+                pname = pname_elem.text.strip() if pname_elem is not None else ''
+                # Reconstruct the type string from everything before <name>.
+                # The '*' for pointer types appears as the tail of <type>, e.g.:
+                #   <type>void</type>*    <name>pUserData</name>
+                ptype_parts = [param_elem.text or '']
+                for child in param_elem:
+                    if child.tag == 'name':
+                        break  # name is always last; stop here
+                    ptype_parts.append((child.text or '') + (child.tail or ''))
+                ptype = ''.join(ptype_parts).strip()
+                parameters.append(FuncPointerType._Parameters(ptype, pname))
+
+            return [cls(name, ret=ret, parameters=parameters, **data)]
+
+        # Old format: typedef {RET} (VKAPI_PTR *{NAME})({PARAMS...});
         raw = data['raw'].strip().replace('\r', '').replace('\n', '')
 
-        # typedef {RETURN} (VKAPI_PTR *{NAME})({PARAMS...});
-
-        # extract {RETURN}, split the typedef away,
-        # then take everything up to the first (
         ret = raw.split(None, 1)[1].split('(', 1)[0].strip()
-        # split to the 2nd (, take everything after,
-        # then split to the next ). Leaving {PARAMS...} behind
         parameters = [p for p in raw.split('(', 2)[2].split(')')[0].strip().split(',') if p.strip()]
 
-        # when {PARAMS...} is void
         if len(parameters) == 1 and parameters[0] == 'void':
             parameters = []
 
@@ -1002,13 +1063,22 @@ class MemberType(Type):
     def factory(cls, element, name, data):
         members = [Member.from_element(e) for e in element.findall('member')]
 
-        # May not have members at all (struct with only an alias)
         if len(members) == 0:
             return [cls(name, **data)]
 
+        # Expand comma-delimited member api values to collect individual API names
+        api_set = set()
+        for member in members:
+            if member.api is None:
+                api_set.add(None)
+            else:
+                for a in member.api.split(','):
+                    api_set.add(a.strip())
+
         result = list()
-        for api in set(member.api for member in members):
-            api_members = [member for member in members if member.api is None or member.api == api]
+        for api in api_set:
+            api_members = [member for member in members
+                           if member.api is None or _api_matches(member.api, api)]
             t = cls(name, members=api_members, **data)
             t.api = api
             result.append(t)
@@ -1094,8 +1164,6 @@ class Member(IdentifiedByName):
         self.type = type_
         self.api = api
         self.enum = enum
-
-        assert self.api is None or ',' not in self.api
 
     @classmethod
     def from_element(cls, element):
@@ -1220,8 +1288,6 @@ class Command(IdentifiedByName):
         self.params = params
         self.alias = alias
 
-        assert self.api is None or ',' not in self.api
-
         if self.alias is None and self.proto is None:
             raise ValueError("command is neither a full command nor an alias")
 
@@ -1239,20 +1305,30 @@ class Command(IdentifiedByName):
             if alias_element is not None:
                 alias = alias_element.attrib['name']
 
-        api = element.get('api')
-
+        api_raw = element.get('api')
         name = element.get('name') or proto.name
 
-        # Only alias or no members
         if params is None or len(params) == 0:
-            return [cls(name, api=api, proto=proto, params=params, alias=alias)]
+            # Expand command-level comma-delimited api
+            if api_raw is not None and ',' in api_raw:
+                return [cls(name, api=a.strip(), proto=proto, params=params, alias=alias)
+                        for a in api_raw.split(',')]
+            return [cls(name, api=api_raw, proto=proto, params=params, alias=alias)]
+
+        # Expand comma-delimited param api values to collect individual API names
+        api_set = set()
+        for param in params:
+            if param.api is None:
+                api_set.add(None)
+            else:
+                for a in param.api.split(','):
+                    api_set.add(a.strip())
 
         result = list()
-        apis = set(param.api for param in params)
-        for api in apis:
-            api_params = [param for param in params if param.api is None or param.api == api]
+        for api in api_set:
+            api_params = [param for param in params
+                          if param.api is None or _api_matches(param.api, api)]
             result.append(cls(name, api=api, proto=proto, params=api_params, alias=alias))
-
         return result
 
     @property
@@ -1298,8 +1374,6 @@ class Param(object):
         self.type = ParsedType.from_element(element)
         self.name = element.find('name').text.strip('*')
         self.api = element.get('api')
-
-        assert self.api is None or ',' not in self.api
 
     def is_equivalent(self, other):
         return self.type == other.type

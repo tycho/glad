@@ -89,6 +89,13 @@ typedef {{ type.category }} {% if type.alias %}{{ type.alias }}{% else %}{{ type
     {{ member.type._raw }};
 {% endfor %}
 }{% endif %} {{ type.name }};
+{% elif type.category == 'funcpointer' -%}
+typedef {{ type.ret }} (VKAPI_PTR *{{ type.name }})(
+{% if type.parameters %}
+{% for param in type.parameters %}
+    {{ param.type }} {{ param.name }}{% if not loop.last %},{% endif %}
+
+{% endfor %}){%- else %}void){%- endif %};
 {% elif type.alias %}
 #define {{ type.name }} {{ type.alias }}
 {%- elif type._raw|trim -%}
