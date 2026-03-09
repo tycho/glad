@@ -20,3 +20,4 @@ dist/
 target/
 Cargo.lock
 .vscode/
+.ninja_log

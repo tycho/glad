@@ -2,7 +2,7 @@
  * No extensions compatibility GL MX
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:compatibility" --extensions="" c --loader
- * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
+ * COMPILE: $GCC $test -o $tmp/test -I$repo_root/third_party/xxHash -I$tmp/include $tmp/src/gl.c -ldl
  * RUN: $tmp/test
  */
 

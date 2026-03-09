@@ -2,7 +2,7 @@
  * Full core GL MX header only
  *
  * GLAD: $GLAD --out-path=$tmp --api="gl:core" c --loader --header-only
- * COMPILE: $GCC $test -o $tmp/test -Ithird_party/xxHash -I$tmp/include -ldl
+ * COMPILE: $GCC $test -o $tmp/test -I$repo_root/third_party/xxHash -I$tmp/include -ldl
  * RUN: $tmp/test
  */
 
