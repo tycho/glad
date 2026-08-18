@@ -99,7 +99,7 @@ class FeatureSet(object):
         index = 0
         for command in commands:
             command.index = index
-            command.hash = '0x' + xxh3_64_hexdigest(command.name)
+            command.hash = '0x' + xxh3_64_hexdigest(command.name.encode('utf-8'))
             command.scope = command_scope_name(command)
             index += 1
 
@@ -111,7 +111,7 @@ class FeatureSet(object):
         index = 0
         for extension in extensions:
             extension.index = index
-            extension.hash = '0x' + xxh3_64_hexdigest(extension.name)
+            extension.hash = '0x' + xxh3_64_hexdigest(extension.name.encode('utf-8'))
             index += 1
 
     def __str__(self):
